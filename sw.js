@@ -1,6 +1,6 @@
 // August Challenge service worker — offline shell.
 // Bump CACHE version on every release so installed phones pick up updates.
-const CACHE = "aug-challenge-v5";
+const CACHE = "aug-challenge-v6";
 const SHELL = ["./", "index.html", "manifest.json", "walks.js"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
