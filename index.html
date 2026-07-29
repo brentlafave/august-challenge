@@ -184,6 +184,27 @@
   .wrow.done { background:var(--accent-soft); border-color:var(--accent-line); }
   .wrow .wname { font-size:13.5px; }
   .wnote { font-size:10.5px; color:var(--faint); margin-top:12px; line-height:1.5; }
+  .wx { font-size:12px; color:var(--muted); margin:0 2px 10px; }
+  .wx b { color:var(--text); }
+  .badges { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .badge { font-size:11px; font-weight:700; padding:6px 11px; border-radius:999px; background:var(--surface); border:1px solid var(--line); color:var(--faint); }
+  .badge.on { background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent); }
+  .h2h-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px; }
+  .h2h-top { display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--muted); margin-bottom:12px; }
+  .h2h-top b { color:var(--text); font-size:14px; }
+  .h2row { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:11px; color:var(--muted); }
+  .h2row:last-of-type { margin-bottom:0; }
+  .h2name { width:96px; flex:0 0 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+  .h2bar { flex:1; height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; display:flex; }
+  .h2bar.l { justify-content:flex-end; }
+  .h2bar i { display:block; height:100%; background:var(--accent); }
+  .h2bar.lose i { background:var(--faint); }
+  .h2v { width:34px; flex:0 0 auto; }
+  .winner { margin-top:12px; background:var(--accent-soft); border:1px solid var(--accent-line); border-radius:12px; padding:11px 13px; font-size:12.5px; }
+  .winner b { color:var(--accent); }
+  .recap { margin-top:14px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 13px; font-size:12.5px; color:var(--muted); line-height:1.5; }
+  .recap b { color:var(--text); }
+  .recap .rx { float:right; color:var(--muted); padding:0 4px; cursor:pointer; font-size:15px; line-height:1; }
   .wempty { font-size:12.5px; color:var(--muted); padding:14px; background:var(--surface); border:1px solid var(--line); border-radius:12px; margin-top:8px; }
 </style>
 </head>
@@ -203,6 +224,7 @@
   <div class="mbar"><i id="mFill"></i></div>
   <div class="mcap"><span id="mPct"></span><span id="mDay"></span></div>
   <div id="nag"></div>
+  <div id="recap"></div>
 
   <div class="days" id="days"></div>
   <div class="sel-label"><b id="selT"></b><span id="selS"></span></div>
@@ -210,6 +232,7 @@
 
   <section>
     <div class="sec-h">Today's walk</div>
+    <div id="wWx"></div>
     <div id="walkRec"></div>
     <div id="walkAlt"></div>
     <div class="wbrowse-t" id="wBrowseT">Browse all walks</div>
@@ -221,6 +244,7 @@
   <section>
     <div class="sec-h">Month so far</div>
     <div class="tiles" id="tiles"></div>
+    <div id="badges"></div>
   </section>
 
   <section>
@@ -236,6 +260,11 @@
   <section>
     <div class="sec-h">Completion</div>
     <div class="hstats" id="hstats"></div>
+  </section>
+
+  <section>
+    <div class="sec-h">Head to head</div>
+    <div id="h2h"></div>
   </section>
 
   <footer>Syncs automatically &middot; August 2026</footer>
@@ -869,8 +898,124 @@ function renderWalks() {
 }
 document.getElementById("wBrowseT").onclick = () => { wBrowse = !wBrowse; render(); };
 
+// ---------- Weather (open-meteo — free, no key) ----------
+const HOME = { brent: { lat: -27.07, lon: 152.88, label: "Bellmere" }, leighton: { lat: -26.74, lon: 153.12, label: "Bokarina" } };
+const WXDESC = { 0:"clear", 1:"mostly clear", 2:"partly cloudy", 3:"overcast", 45:"foggy", 48:"foggy", 51:"light drizzle", 53:"drizzle", 55:"drizzle", 61:"light rain", 63:"rain", 65:"heavy rain", 66:"freezing rain", 67:"freezing rain", 80:"showers", 81:"showers", 82:"heavy showers", 95:"storms", 96:"storms", 99:"storms" };
+async function fetchWx(p) {
+  const key = LS + "wx_" + p, today = localISO(new Date());
+  try { const c = JSON.parse(localStorage.getItem(key)); if (c && c.date === today && (Date.now() - c.at) < 3600000) return c.d; } catch(e) {}
+  const h = HOME[p];
+  const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=" + h.lat + "&longitude=" + h.lon +
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Australia%2FBrisbane&forecast_days=1");
+  if (!r.ok) throw 0;
+  const j = await r.json();
+  const d = { code: j.daily.weather_code[0], hi: Math.round(j.daily.temperature_2m_max[0]), lo: Math.round(j.daily.temperature_2m_min[0]), rain: j.daily.precipitation_probability_max[0] };
+  try { localStorage.setItem(key, JSON.stringify({ date: today, at: Date.now(), d: d })); } catch(e) {}
+  return d;
+}
+function renderWx() {
+  const el = document.getElementById("wWx");
+  if (!el) return;
+  const forP = PERSON;
+  fetchWx(forP).then(d => {
+    if (!d || PERSON !== forP) return;
+    const hint = d.rain >= 60 ? "high rain chance — check before heading out" : d.rain >= 30 ? "maybe pack a jacket" : "good day for it";
+    el.innerHTML = '<div class="wx">' + HOME[forP].label + ' today: <b>' + d.lo + '–' + d.hi + '°</b> · ' +
+      (WXDESC[d.code] || "") + ' · <b>' + d.rain + '%</b> rain — ' + hint + '</div>';
+  }).catch(() => { el.innerHTML = ""; });
+}
+
+// ---------- Streak badges ----------
+function bestStreak(p) {
+  const t = todayDay(), elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
+  let best = 0, cur = 0;
+  for (let d = 1; d <= elapsed; d++) { if (dayPerfect(p, d)) { cur++; if (cur > best) best = cur; } else cur = 0; }
+  return best;
+}
+function renderBadges() {
+  const el = document.getElementById("badges");
+  if (!el) return;
+  const best = bestStreak(PERSON);
+  el.innerHTML = '<div class="badges">' + [3, 7, 14, 31].map(n =>
+    '<span class="badge' + (best >= n ? " on" : "") + '">' + (best >= n ? "&#10003; " : "") + n + '-day streak</span>').join("") + '</div>';
+}
+
+// ---------- Head to head ----------
+function habitPct(p, hkey) {
+  const h = personDef(p).habits.find(x => x.key === hkey);
+  if (!h) return null;
+  const t = todayDay(), elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
+  let num = 0, den;
+  if (isDaily(h)) { den = Math.max(elapsed, 1); for (let d = 1; d <= elapsed; d++) if (habitDone(p, d, h)) num++; }
+  else { den = 0;
+    const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
+    for (const w of weeks) { const days = weekDays(w);
+      if (t >= days[0]) { den += h.target; num += Math.min(h.target, days.filter(d => habitDone(p, d, h)).length); } }
+    den = Math.max(den, 1); }
+  return Math.round(num / den * 100);
+}
+function renderH2H() {
+  const el = document.getElementById("h2h");
+  if (!el) return;
+  const t = todayDay();
+  const bp = monthPct("brent"), lp = monthPct("leighton");
+  const keys = [], seen = new Set();
+  for (const p of PEOPLE) for (const h of p.habits) if (!seen.has(h.key)) { seen.add(h.key); keys.push(h.key); }
+  let rows = "";
+  for (const k of keys) {
+    const bh = personDef("brent").habits.find(x => x.key === k);
+    const lh = personDef("leighton").habits.find(x => x.key === k);
+    const b = habitPct("brent", k), l = habitPct("leighton", k);
+    rows += '<div class="h2row">' +
+      '<div class="h2v">' + (b == null ? "—" : b + "%") + '</div>' +
+      '<div class="h2bar l' + (b != null && l != null && b < l ? " lose" : "") + '"><i style="width:' + (b || 0) + '%"></i></div>' +
+      '<div class="h2name">' + (bh || lh).name + '</div>' +
+      '<div class="h2bar' + (b != null && l != null && l < b ? " lose" : "") + '"><i style="width:' + (l || 0) + '%"></i></div>' +
+      '<div class="h2v" style="text-align:right">' + (l == null ? "—" : l + "%") + '</div></div>';
+  }
+  let banner = "";
+  if (t > NDAYS) {
+    banner = '<div class="winner">' + (bp === lp ? '<b>Dead heat</b> — ' + bp + '% each. Call it a draw.' :
+      '<b>' + (bp > lp ? "Brent" : "Leighton") + ' takes August</b> — ' + Math.max(bp, lp) + '% to ' + Math.min(bp, lp) + '%.') + '</div>';
+  } else if (t >= 1 && (bp > 0 || lp > 0)) {
+    banner = '<div class="winner">' + (bp === lp ? 'Level at <b>' + bp + '%</b> — all to play for.' :
+      '<b>' + (bp > lp ? "Brent" : "Leighton") + '</b> leads ' + Math.max(bp, lp) + '% to ' + Math.min(bp, lp) + '%.') + '</div>';
+  }
+  el.innerHTML = '<div class="h2h-card"><div class="h2h-top"><b>Brent ' + bp + '%</b><span>vs</span><b>' + lp + '% Leighton</b></div>' + rows + banner + '</div>';
+}
+
+// ---------- Monday weekly recap ----------
+function renderRecap() {
+  const el = document.getElementById("recap");
+  if (!el) return;
+  el.innerHTML = "";
+  const now = new Date(), t = todayDay();
+  if (now.getDay() !== 1) return;
+  if (t < 2 || t > NDAYS + 7) return;
+  const end = Math.min(t - 1, NDAYS), start = Math.max(1, end - 6);
+  const key = PERSON + "|" + start + "-" + end;
+  let dism = null; try { dism = localStorage.getItem(LS + "recap"); } catch(e) {}
+  if (dism === key) return;
+  const P = personDef(PERSON);
+  let steps = 0, sleepSum = 0, sleepN = 0, sess = 0, walks = 0, perfect = 0;
+  for (let d = start; d <= end; d++) {
+    const sv = val(PERSON, d, "steps"); if (sv != null) steps += sv;
+    const sl = val(PERSON, d, "sleep"); if (sl != null) { sleepSum += sl; sleepN++; }
+    for (const h of P.habits) if (h.type === "wk" && habitDone(PERSON, d, h)) sess++;
+    for (const k of Object.keys(state[PERSON])) if (k.indexOf(d + "|walk:") === 0 && state[PERSON][k].d) walks++;
+    if (dayPerfect(PERSON, d)) perfect++;
+  }
+  const days = end - start + 1;
+  el.innerHTML = '<div class="recap"><span class="rx" id="recapX">&times;</span>' +
+    '<b>Last week (' + start + '–' + end + ' Aug):</b> ' + fmt(steps) + ' steps · ' +
+    (sleepN ? (sleepSum / sleepN).toFixed(1) + ' h avg sleep · ' : '') +
+    sess + ' session' + (sess === 1 ? '' : 's') + ' · ' + walks + ' walk' + (walks === 1 ? '' : 's') + ' · ' +
+    perfect + '/' + days + ' perfect days' + (perfect === days ? ' — <b>perfect week!</b>' : '') + '</div>';
+  document.getElementById("recapX").onclick = () => { try { localStorage.setItem(LS + "recap", key); } catch(e) {} renderRecap(); };
+}
+
 const _renderCore = render;
-render = function() { _renderCore(); renderWalks(); };
+render = function() { _renderCore(); renderWalks(); renderWx(); renderBadges(); renderH2H(); renderRecap(); };
 
 if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
 
