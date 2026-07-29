@@ -211,6 +211,7 @@
   <section>
     <div class="sec-h">Today's walk</div>
     <div id="walkRec"></div>
+    <div id="walkAlt"></div>
     <div class="wbrowse-t" id="wBrowseT">Browse all walks</div>
     <div id="wFilters" style="display:none"></div>
     <div id="wList" style="display:none"></div>
@@ -816,6 +817,28 @@ function renderWalks() {
   card.innerHTML = walkCardHtml(w, wRecOpen, true);
   recEl.innerHTML = ""; recEl.appendChild(card);
   bindWalkActions(recEl);
+
+  // two more deterministic options for the day, so there is always a choice
+  const altEl = document.getElementById("walkAlt");
+  altEl.innerHTML = "";
+  const altPool = WALKS.filter(x => x.person === PERSON && x.id !== w.id);
+  if (altPool.length) {
+    const now = new Date();
+    const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+    const alts = [];
+    for (let i = 1; alts.length < 2 && i <= altPool.length; i++) {
+      const cand = altPool[(doy + i) % altPool.length];
+      if (!alts.includes(cand)) alts.push(cand);
+    }
+    altEl.innerHTML = '<div class="wmeta" style="margin:12px 2px 0">Or today:</div>';
+    for (const x of alts) {
+      const row = document.createElement("div");
+      row.className = "wrow" + (walkDoneOn(selDay, x) ? " done" : "");
+      row.innerHTML = walkCardHtml(x, wOpen === x.id, false);
+      altEl.appendChild(row);
+    }
+    bindWalkActions(altEl);
+  }
 
   document.getElementById("wBrowseT").textContent = wBrowse ? "Hide walk list" : "Browse all walks";
   const fEl = document.getElementById("wFilters"), lEl = document.getElementById("wList");
