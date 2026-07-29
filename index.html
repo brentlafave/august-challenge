@@ -156,6 +156,35 @@
   .hstat .hv { width:44px; flex:0 0 auto; text-align:right; color:var(--muted); }
 
   footer { text-align:center; color:var(--faint); font-size:10.5px; margin-top:30px; letter-spacing:.3px; }
+
+  .wcard { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px; }
+  .wcard.done { background:var(--accent-soft); border-color:var(--accent-line); }
+  .wtop { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .wname { font-size:15px; font-weight:700; }
+  .wfav { color:var(--faint); cursor:pointer; font-size:17px; flex:0 0 auto; line-height:1; }
+  .wfav.on { color:var(--warn); }
+  .wmeta { font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .wmeta b { color:var(--text); font-weight:600; }
+  .wdesc { font-size:12.5px; color:var(--muted); margin-top:8px; line-height:1.45; }
+  .wacts { display:flex; gap:7px; margin-top:12px; flex-wrap:wrap; }
+  .wbtn { border:0; font:inherit; font-size:12.5px; font-weight:700; padding:9px 13px; border-radius:10px; cursor:pointer; }
+  .wbtn.dir { background:var(--accent); color:#06281c; text-decoration:none; display:inline-block; }
+  .wbtn.gh { background:var(--surface2); color:var(--text); border:1px solid var(--line); }
+  .wbtn.gh.act { border-color:var(--accent-line); color:var(--accent); }
+  .wdetails { border-top:1px solid var(--line); margin-top:12px; padding-top:11px; font-size:12px; color:var(--muted); line-height:1.6; }
+  .wdetails b { color:var(--text); font-weight:600; }
+  .wdetails a { color:var(--accent); }
+  .wcaution { color:var(--warn); }
+  .wbrowse-t { margin:10px 0 0; font-size:12.5px; font-weight:700; color:var(--accent); cursor:pointer; }
+  .fgrp { display:flex; gap:5px; flex-wrap:wrap; margin-top:10px; }
+  .fchip { font-size:11px; font-weight:600; color:var(--muted); background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:5px 11px; cursor:pointer; }
+  .fchip.on { background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent); }
+  .wrow { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 13px; margin-top:8px; cursor:pointer; }
+  .wrow.done { background:var(--accent-soft); border-color:var(--accent-line); }
+  .wrow .wname { font-size:13.5px; }
+  .wnote { font-size:10.5px; color:var(--faint); margin-top:12px; line-height:1.5; }
+  .wempty { font-size:12.5px; color:var(--muted); padding:14px; background:var(--surface); border:1px solid var(--line); border-radius:12px; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -180,6 +209,15 @@
   <div class="habits" id="habits"></div>
 
   <section>
+    <div class="sec-h">Today's walk</div>
+    <div id="walkRec"></div>
+    <div class="wbrowse-t" id="wBrowseT">Browse all walks</div>
+    <div id="wFilters" style="display:none"></div>
+    <div id="wList" style="display:none"></div>
+    <div class="wnote">Route lengths, times and travel distances are approximate. Facilities and dog rules can change — check signage. Directions and source links need internet; the walk list itself works offline.</div>
+  </section>
+
+  <section>
     <div class="sec-h">Month so far</div>
     <div class="tiles" id="tiles"></div>
   </section>
@@ -202,6 +240,7 @@
   <footer>Syncs automatically &middot; August 2026</footer>
 </div>
 
+<script src="walks.js"></script>
 <script>
 const SB_URL = "https://ucjhatxzxkqfksptdsoj.supabase.co";
 const SB_KEY = "sb_publishable_-b6cGqwPC4QS8OeKJa-1KA_MNr9u5xc";
@@ -670,6 +709,147 @@ function sleepChart(title, p, h, t) {
     '<div class="xaxis"><span>1</span><span>8</span><span>15</span><span>22</span><span>31</span></div>';
   return card;
 }
+
+// ---------- Walks ----------
+let wBrowse = false, wOpen = null, wRecOpen = false;
+let wF = { len:"all", diff:"all", time:"all", travel:"all" };
+function favKey() { return LS + "favs_" + PERSON; }
+function getFavs() { try { return JSON.parse(localStorage.getItem(favKey())) || []; } catch(e) { return []; } }
+function toggleFav(id) {
+  const f = getFavs(); const i = f.indexOf(id);
+  if (i >= 0) f.splice(i, 1); else f.push(id);
+  try { localStorage.setItem(favKey(), JSON.stringify(f)); } catch(e) {}
+  render();
+}
+function localISO(dt) { return dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0"); }
+function recWalk(p) {
+  const pool = (typeof WALKS !== "undefined" ? WALKS : []).filter(w => w.person === p);
+  if (!pool.length) return null;
+  const now = new Date();
+  const key = LS + "rech_" + p;
+  let hist = []; try { hist = JSON.parse(localStorage.getItem(key)) || []; } catch(e) {}
+  const today = localISO(now);
+  const existing = hist.find(h => h.date === today);
+  if (existing) { const w = pool.find(x => x.id === existing.id); if (w) return w; }
+  const recent = hist.slice(-3).map(h => h.id);
+  let elig = pool.filter(w => !recent.includes(w.id));
+  if (!elig.length) elig = pool;
+  const wknd = now.getDay() === 0 || now.getDay() === 6;
+  let pref = wknd ? elig : elig.filter(w => !w.long && w.travelKm <= 15);
+  if (!pref.length) pref = elig;
+  const doy = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  const pick = pref[(now.getFullYear() + doy) % pref.length];
+  hist.push({ date: today, id: pick.id });
+  try { localStorage.setItem(key, JSON.stringify(hist.slice(-8))); } catch(e) {}
+  return pick;
+}
+function walkKey(w) { return "walk:" + w.id; }
+function walkDoneOn(d, w) { const r = rec(PERSON, d, walkKey(w)); return !!(r && r.d); }
+function markWalk(d, w) {
+  const done = walkDoneOn(d, w);
+  commit(d, { key: walkKey(w) }, { d: done ? 0 : 1, v: done ? null : w.routeKm, det: done ? null : { name: w.name, km: w.routeKm, min: w.timeMin } });
+}
+function logWalkAsRun(d, w) {
+  const runDef = personDef(PERSON).habits.find(h => h.key === "run");
+  if (!runDef) return;
+  commit(d, runDef, { d: 1, v: null, det: { km: w.routeKm, min: w.timeMin } });
+}
+function mapsUrl(w) { return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(w.maps) + "&travelmode=driving"; }
+function passFilter(w) {
+  if (wF.len === "s" && w.routeKm >= 3) return false;
+  if (wF.len === "m" && (w.routeKm < 3 || w.routeKm > 6)) return false;
+  if (wF.len === "l" && w.routeKm <= 6) return false;
+  if (wF.diff === "easy" && !/easy/i.test(w.difficulty)) return false;
+  if (wF.diff === "hard" && /easy/i.test(w.difficulty)) return false;
+  if (wF.time === "q" && w.timeMin >= 45) return false;
+  if (wF.time === "b" && w.timeMin < 45) return false;
+  if (wF.travel === "near" && w.travelKm > 10) return false;
+  if (wF.travel === "trip" && w.travelKm <= 10) return false;
+  return true;
+}
+function walkCardHtml(w, open, isRec) {
+  const done = walkDoneOn(selDay, w);
+  const fav = getFavs().includes(w.id);
+  const dayLbl = (selDay === todayDay()) ? "today" : dow(selDay) + " " + selDay;
+  let h = '<div class="wtop"><div class="wname">' + w.name + '</div><div class="wfav' + (fav ? " on" : "") + '" data-fav="' + w.id + '">&#9733;</div></div>' +
+    '<div class="wmeta">' + w.area + ' &middot; <b>~' + w.routeKm + ' km ' + w.routeType.toLowerCase() + '</b> &middot; ~' + w.timeMin + ' min &middot; ' + w.difficulty + '</div>' +
+    '<div class="wmeta">~' + w.travelKm + ' km from ' + (PERSON === "brent" ? "Bellmere" : "Bokarina") + (done ? ' &middot; <b>walked ' + dayLbl + '</b>' : "") + '</div>' +
+    '<div class="wdesc">' + w.desc + '</div>' +
+    '<div class="wacts">' +
+      '<a class="wbtn dir" href="' + mapsUrl(w) + '" target="_blank" rel="noopener">Directions</a>' +
+      '<button class="wbtn gh" data-det="' + w.id + '">' + (open ? "Hide details" : "Details") + '</button>' +
+      '<button class="wbtn gh' + (done ? " act" : "") + '" data-done="' + w.id + '">' + (done ? "&#10003; Walked" : "Mark walked") + '</button>' +
+      (done ? '<button class="wbtn gh" data-run="' + w.id + '">Also log as run</button>' : "") +
+    '</div>';
+  if (open) {
+    h += '<div class="wdetails">' +
+      '<b>Start:</b> ' + w.start + '<br>' +
+      '<b>Surface:</b> ' + w.surface + ' &middot; <b>Route:</b> ' + w.routeType + '<br>' +
+      '<b>Dogs:</b> ' + w.dogs + '<br>' +
+      '<b>Pram:</b> ' + w.pram + '<br>' +
+      '<b>Toilets:</b> ' + (w.toilets ? "Yes" : "No") + ' &middot; <b>Parking:</b> ' + (w.parking ? "Yes" : "No") + ' &middot; <b>Shade:</b> ' + w.shade + '<br>' +
+      '<b>Water:</b> ' + w.water + '<br>' +
+      '<span class="wcaution"><b>Watch for:</b> ' + w.cautions + '</span><br>' +
+      '<a href="' + w.source + '" target="_blank" rel="noopener">Source</a> &middot; info checked ' + w.verified +
+      '</div>';
+  }
+  return h;
+}
+function bindWalkActions(el) {
+  el.querySelectorAll("[data-fav]").forEach(b => b.onclick = (e) => { e.stopPropagation(); toggleFav(b.dataset.fav); });
+  el.querySelectorAll("[data-done]").forEach(b => b.onclick = (e) => { e.stopPropagation();
+    const w = WALKS.find(x => x.id === b.dataset.done); if (w) markWalk(selDay, w); });
+  el.querySelectorAll("[data-run]").forEach(b => b.onclick = (e) => { e.stopPropagation();
+    const w = WALKS.find(x => x.id === b.dataset.run); if (w) logWalkAsRun(selDay, w); });
+  el.querySelectorAll("[data-det]").forEach(b => b.onclick = (e) => { e.stopPropagation();
+    const id = b.dataset.det;
+    if (b.closest("#walkRec")) { wRecOpen = !wRecOpen; } else { wOpen = (wOpen === id) ? null : id; }
+    render(); });
+}
+function renderWalks() {
+  const recEl = document.getElementById("walkRec");
+  if (!recEl) return;
+  const w = recWalk(PERSON);
+  if (!w) { recEl.innerHTML = '<div class="wempty">No walks available for this area yet.</div>'; return; }
+  const card = document.createElement("div");
+  card.className = "wcard" + (walkDoneOn(selDay, w) ? " done" : "");
+  card.innerHTML = walkCardHtml(w, wRecOpen, true);
+  recEl.innerHTML = ""; recEl.appendChild(card);
+  bindWalkActions(recEl);
+
+  document.getElementById("wBrowseT").textContent = wBrowse ? "Hide walk list" : "Browse all walks";
+  const fEl = document.getElementById("wFilters"), lEl = document.getElementById("wList");
+  fEl.style.display = wBrowse ? "" : "none";
+  lEl.style.display = wBrowse ? "" : "none";
+  if (!wBrowse) return;
+  const G = [
+    ["len", [["all","Any length"],["s","&lt;3 km"],["m","3–6 km"],["l","6+ km"]]],
+    ["diff", [["all","Any difficulty"],["easy","Easy"],["hard","Challenge"]]],
+    ["time", [["all","Any time"],["q","&lt;45 min"],["b","45+ min"]]],
+    ["travel", [["all","Any travel"],["near","&lt;10 km away"],["trip","Worth the trip"]]]
+  ];
+  fEl.innerHTML = G.map(([k, opts]) => '<div class="fgrp">' + opts.map(([v, lbl]) =>
+    '<span class="fchip' + (wF[k] === v ? " on" : "") + '" data-fk="' + k + '" data-fv="' + v + '">' + lbl + '</span>').join("") + '</div>').join("");
+  fEl.querySelectorAll(".fchip").forEach(c => c.onclick = () => { wF[c.dataset.fk] = c.dataset.fv; render(); });
+  const favs = getFavs();
+  const list = WALKS.filter(x => x.person === PERSON && passFilter(x))
+    .sort((a, b) => (favs.includes(b.id) - favs.includes(a.id)) || (a.travelKm - b.travelKm));
+  lEl.innerHTML = "";
+  if (!list.length) { lEl.innerHTML = '<div class="wempty">No walks match those filters.</div>'; return; }
+  for (const x of list) {
+    const row = document.createElement("div");
+    row.className = "wrow" + (walkDoneOn(selDay, x) ? " done" : "");
+    row.innerHTML = walkCardHtml(x, wOpen === x.id, false);
+    lEl.appendChild(row);
+  }
+  bindWalkActions(lEl);
+}
+document.getElementById("wBrowseT").onclick = () => { wBrowse = !wBrowse; render(); };
+
+const _renderCore = render;
+render = function() { _renderCore(); renderWalks(); };
+
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(() => {}); }
 
 selDay = clampDay(todayDay());
 render();
