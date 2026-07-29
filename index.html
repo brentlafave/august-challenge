@@ -48,6 +48,14 @@
   .mbar i { display:block; height:100%; width:0; background:var(--accent); border-radius:3px; transition:width .5s cubic-bezier(.4,0,.2,1); }
   .mcap { display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:6px; }
 
+  .nag { display:flex; align-items:center; gap:10px; margin-top:14px; background:var(--warn-soft); border:1px solid rgba(232,161,60,.35);
+    border-radius:12px; padding:11px 13px; cursor:pointer; }
+  .nag .ni { color:var(--warn); flex:0 0 auto; display:flex; }
+  .nag .ni svg { width:16px; height:16px; }
+  .nag .nt { flex:1; font-size:12.5px; color:var(--text); }
+  .nag .nt b { color:var(--warn); }
+  .nag .nx { flex:0 0 auto; color:var(--muted); font-size:16px; padding:2px 6px; line-height:1; }
+
   .days { display:flex; gap:7px; overflow-x:auto; padding:16px 2px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .days::-webkit-scrollbar { display:none; }
   .day { flex:0 0 auto; width:46px; padding:8px 0 8px; border-radius:12px; background:var(--surface); border:1px solid var(--line);
@@ -80,6 +88,7 @@
   .nm { font-size:14.5px; font-weight:600; letter-spacing:-.1px; }
   .sb { font-size:11.5px; color:var(--muted); margin-top:2px; }
   .sb .carry { color:var(--warn); font-weight:600; }
+  .sb .detlink { color:var(--accent); font-weight:600; cursor:pointer; }
   .val { text-align:right; flex:0 0 auto; }
   .val .v { font-size:16px; font-weight:700; letter-spacing:-.3px; }
   .val .u { font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-top:1px; }
@@ -100,6 +109,10 @@
   .btn { border:0; font:inherit; font-size:13px; font-weight:700; padding:10px 16px; border-radius:10px; cursor:pointer; flex:0 0 auto; }
   .btn.save { background:var(--accent); color:#06281c; }
   .btn.ghost { background:var(--surface2); color:var(--muted); }
+  .editor.wrapd { flex-wrap:wrap; }
+  .editor.wrapd input { flex:1 1 70px; }
+  .btn.chipb { background:var(--surface2); border:1px solid var(--line); color:var(--text); font-weight:600; padding:9px 12px; }
+  .btn.chipb:active { background:var(--accent-soft); border-color:var(--accent-line); }
 
   section { margin-top:26px; }
   .sec-h { font-size:11px; text-transform:uppercase; letter-spacing:1.8px; color:var(--muted); font-weight:700; margin-bottom:12px; }
@@ -160,6 +173,7 @@
   </div>
   <div class="mbar"><i id="mFill"></i></div>
   <div class="mcap"><span id="mPct"></span><span id="mDay"></span></div>
+  <div id="nag"></div>
 
   <div class="days" id="days"></div>
   <div class="sel-label"><b id="selT"></b><span id="selS"></span></div>
@@ -211,22 +225,24 @@ function icon(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="curre
 const PEOPLE = [
   { key:"brent", label:"Brent", habits:[
     { key:"water",     name:"Water & non-sugar drinks", type:"bin", ic:"drop" },
+    { key:"water3l",   name:"Water intake", type:"water", target:3, sub:"3 L per day", ic:"drop" },
     { key:"noalcohol", name:"No alcohol",               type:"bin", ic:"ban" },
     { key:"noubereats",name:"No Uber Eats",             type:"bin", ic:"ban" },
     { key:"sleep",     name:"Sleep",  type:"sleep", lo:6, hi:8.5, sub:"Target 6–8 hrs", ic:"moon" },
     { key:"steps",     name:"Steps",  type:"steps", target:8000, carry:true, ic:"steps" },
-    { key:"weights",   name:"Weights", type:"wk", target:2, sub:"2× per week", ic:"gym" },
-    { key:"run",       name:"Run",     type:"wk", target:1, sub:"1× per week", ic:"run" },
+    { key:"weights",   name:"Weights", type:"wk", target:2, sub:"2× per week", ic:"gym", det:["min"] },
+    { key:"run",       name:"Run",     type:"wk", target:1, sub:"1× per week", ic:"run", det:["km","min"] },
     { key:"audiobook", name:"Audio book", type:"bin", sub:"Listen daily", ic:"phones" }
   ]},
   { key:"leighton", label:"Leighton", habits:[
     { key:"water",   name:"Water only",   type:"bin", ic:"drop" },
+    { key:"water3l", name:"Water intake", type:"water", target:3, sub:"3 L per day", ic:"drop" },
     { key:"noalcohol",name:"No alcohol",  type:"bin", ic:"ban" },
     { key:"nojunk",  name:"No junk food", type:"bin", ic:"ban" },
     { key:"sleep",   name:"Sleep",  type:"sleep", lo:6, hi:8.5, sub:"Target 6–8 hrs", ic:"moon" },
     { key:"steps",   name:"Steps",  type:"steps", target:10000, carry:true, ic:"steps" },
-    { key:"gym",     name:"Gym",    type:"wk", target:3, sub:"3–4× per week", ic:"gym" },
-    { key:"run",     name:"Run",    type:"wk", target:3, sub:"3× per week", ic:"run" },
+    { key:"gym",     name:"Gym",    type:"wk", target:3, sub:"3–4× per week", ic:"gym", det:["min"] },
+    { key:"run",     name:"Run",    type:"wk", target:3, sub:"3× per week", ic:"run", det:["km","min"] },
     { key:"oats",    name:"Oat bowl", type:"bin", sub:"Every day", ic:"bowl" },
     { key:"read",    name:"Read 10 pages", type:"bin", sub:"Every day", ic:"book" }
   ]}
@@ -262,7 +278,14 @@ function weekOf(d) { const off = (new Date(YEAR, MONTH, 1).getDay() + 6) % 7; re
 function weekDays(w) { const a = []; for (let d = 1; d <= NDAYS; d++) if (weekOf(d) === w) a.push(d); return a; }
 function rec(p, d, h) { return state[p][d + "|" + h] || null; }
 function val(p, d, h) { const r = rec(p, d, h); return r && r.v != null ? +r.v : null; }
+function detOf(p, d, h) { const r = rec(p, d, h); return r && r.det ? r.det : null; }
 function fmt(n) { return n.toLocaleString("en-AU"); }
+function fmtDet(det) {
+  const parts = [];
+  if (det && det.km != null) parts.push(det.km + " km");
+  if (det && det.min != null) parts.push(det.min + " min");
+  return parts.join(" · ");
+}
 
 // steps carry-over: yesterday's logged shortfall (capped at one base target) adds to today
 const effMemo = {};
@@ -284,12 +307,13 @@ function habitDone(p, d, h) {
   if (h.type === "bin" || h.type === "wk") return !!(r && r.d);
   if (h.type === "steps") { const v = val(p, d, h.key); return v != null && v >= stepsEff(p, d, h); }
   if (h.type === "sleep") { const v = val(p, d, h.key); return v != null && v >= h.lo && v <= h.hi; }
+  if (h.type === "water") { const v = val(p, d, h.key); return !!(r && r.d) || (v != null && v >= h.target); }
   return false;
 }
 function habitMissed(p, d, h, t) {
   // logged / elapsed but not achieved (for numeric: only when a value exists)
   if (d > Math.min(t, NDAYS) || t < 1) return false;
-  if (h.type === "steps" || h.type === "sleep") { const v = val(p, d, h.key); return v != null && !habitDone(p, d, h); }
+  if (h.type === "steps" || h.type === "sleep" || h.type === "water") { const v = val(p, d, h.key); return v != null && !habitDone(p, d, h); }
   return false;
 }
 function isDaily(h) { return h.type !== "wk"; }
@@ -317,12 +341,12 @@ function setSync(msg, err) {
 
 async function pull() {
   try {
-    const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?select=person,day,habit,done,value", {
+    const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?select=person,day,habit,done,value,detail", {
       headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY } });
     if (!r.ok) throw 0;
     const rows = await r.json();
     const s = {}; PEOPLE.forEach(p => s[p.key] = {});
-    for (const row of rows) if (s[row.person]) s[row.person][row.day + "|" + row.habit] = { d: row.done ? 1 : 0, v: row.value };
+    for (const row of rows) if (s[row.person]) s[row.person][row.day + "|" + row.habit] = { d: row.done ? 1 : 0, v: row.value, det: row.detail || null };
     for (const key of Object.keys(pending)) {
       const [p, d, h] = key.split("|");
       if (s[p]) s[p][d + "|" + h] = pending[key];
@@ -337,7 +361,7 @@ async function flush() {
   const rows = keys.map(key => {
     const [person, day, habit] = key.split("|");
     const r = pending[key];
-    return { person, day: +day, habit, done: !!r.d, value: r.v, updated_at: new Date().toISOString() };
+    return { person, day: +day, habit, done: !!r.d, value: r.v != null ? r.v : null, detail: r.det || null, updated_at: new Date().toISOString() };
   });
   try {
     const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?on_conflict=person,day,habit", {
@@ -359,18 +383,56 @@ function commit(d, h, obj) {
 }
 function toggle(d, h) {
   const r = rec(PERSON, d, h.key);
-  commit(d, h, { d: r && r.d ? 0 : 1, v: r ? r.v : null });
+  commit(d, h, { d: r && r.d ? 0 : 1, v: r ? r.v : null, det: r ? r.det : null });
 }
 function saveNum(d, h) {
+  editing = null;
+  if (h.type === "wk") {
+    // detail inputs: km and/or min — logging details also marks the session done
+    const det = {};
+    const i1 = document.getElementById("numInp"), i2 = document.getElementById("numInp2");
+    if (h.det.includes("km")) { const km = parseFloat(h.det.length > 1 ? i1.value : i1.value); if (!isNaN(km)) det.km = km; }
+    if (h.det.includes("min")) { const el = h.det.length > 1 ? i2 : i1; const mn = parseFloat(el.value); if (!isNaN(mn)) det.min = mn; }
+    const r = rec(PERSON, d, h.key);
+    commit(d, h, { d: 1, v: r ? r.v : null, det: Object.keys(det).length ? det : (r ? r.det : null) });
+    return;
+  }
   const inp = document.getElementById("numInp");
   const v = parseFloat(inp.value);
-  editing = null;
   if (isNaN(v)) { render(); return; }
-  const obj = { d: 0, v: v };
+  const r0 = rec(PERSON, d, h.key);
+  const obj = { d: 0, v: v, det: r0 ? r0.det : null };
   state[PERSON][d + "|" + h.key] = obj;
   for (const k of Object.keys(effMemo)) delete effMemo[k];
   obj.d = habitDone(PERSON, d, h) ? 1 : 0;
   commit(d, h, obj);
+}
+
+function missingPrev(p) {
+  const t = todayDay();
+  if (t < 2) return null;
+  const d = Math.min(t, NDAYS + 1) - 1;
+  if (d < 1 || d > NDAYS) return null;
+  const missing = personDef(p).habits.filter(h => {
+    if (h.type === "steps" || h.type === "sleep") return val(p, d, h.key) == null;
+    if (h.type === "water") { const r = rec(p, d, h.key); return val(p, d, h.key) == null && !(r && r.d); }
+    return false;
+  });
+  return missing.length ? { d, missing } : null;
+}
+let nagDismissed = null;
+try { nagDismissed = localStorage.getItem(LS + "nag"); } catch(e) {}
+
+function addWater(d, h, litres) {
+  const r = rec(PERSON, d, h.key);
+  const v = Math.round(((r && r.v != null ? +r.v : 0) + litres) * 100) / 100;
+  commit(d, h, { d: (r && r.d) || v >= h.target ? 1 : 0, v: v, det: r ? r.det : null });
+}
+function tickWater(d, h) {
+  const r = rec(PERSON, d, h.key);
+  const wasOver = !!(r && r.d);
+  const v = r && r.v != null ? +r.v : null;
+  commit(d, h, { d: wasOver ? (v != null && v >= h.target ? 1 : 0) : 1, v: v, det: r ? r.det : null });
 }
 
 function render() {
@@ -396,6 +458,23 @@ function render() {
   document.getElementById("mFill").style.width = pct + "%";
   document.getElementById("mPct").textContent = pct + "% complete";
   document.getElementById("mDay").textContent = elapsed < 1 ? "Starts 1 August" : "Day " + elapsed + " of " + NDAYS;
+
+  // missing-data reminder for previous day
+  const nagEl = document.getElementById("nag"); nagEl.innerHTML = "";
+  const nag = missingPrev(PERSON);
+  if (nag && nagDismissed !== PERSON + "|" + nag.d) {
+    const names = nag.missing.map(h => h.name.toLowerCase()).join(" & ");
+    const el = document.createElement("div");
+    el.className = "nag";
+    el.innerHTML = '<span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>' +
+      '<span class="nt"><b>' + dow(nag.d) + " " + nag.d + ' August</b> — no ' + names + ' logged. Tap to enter.</span>' +
+      '<span class="nx" id="nagX">&times;</span>';
+    el.onclick = () => { selDay = nag.d; editing = nag.missing[0].key; render();
+      setTimeout(() => { const e = document.getElementById("numInp"); if (e) e.scrollIntoView({ block: "center" }); }, 80); };
+    el.querySelector("#nagX").onclick = (e) => { e.stopPropagation(); nagDismissed = PERSON + "|" + nag.d;
+      try { localStorage.setItem(LS + "nag", nagDismissed); } catch(err) {} render(); };
+    nagEl.appendChild(el);
+  }
 
   // day strip
   const daysEl = document.getElementById("days"); daysEl.innerHTML = "";
@@ -430,9 +509,17 @@ function render() {
     } else if (h.type === "sleep") {
       const v = val(PERSON, selDay, h.key);
       right = '<div class="val"><div class="v' + (v == null ? " empty" : "") + '">' + (v == null ? "—" : v) + '</div><div class="u">hours</div></div>';
+    } else if (h.type === "water") {
+      const v = val(PERSON, selDay, h.key);
+      const r0 = rec(PERSON, selDay, h.key);
+      if (r0 && r0.d && (v == null || v < h.target)) sub = "3 L per day · ticked off";
+      right = '<div class="val"><div class="v' + (v == null ? " empty" : "") + '">' + (v == null ? "—" : v) + '</div><div class="u">of 3 L</div></div>';
     } else if (h.type === "wk") {
       const w = weekOf(selDay), count = weekDays(w).filter(d => habitDone(PERSON, d, h)).length;
-      sub = (h.sub || "") + " · " + count + "/" + h.target + " this week";
+      const det = detOf(PERSON, selDay, h.key);
+      const detTxt = det ? fmtDet(det) : "";
+      sub = (h.sub || "") + " · " + count + "/" + h.target + " this week" +
+        (detTxt ? ' · <span class="detlink" data-det="1">' + detTxt + '</span>' : ' · <span class="detlink" data-det="1">log details</span>');
       let pips = "";
       for (let i = 0; i < h.target; i++) pips += '<span class="pip' + (i < count ? " on" : "") + '"></span>';
       right = '<div class="pips">' + pips + '</div><div class="chk">' + (done ? icon("check") : "") + '</div>';
@@ -441,19 +528,49 @@ function render() {
     }
     card.innerHTML = '<div class="row"><div class="ic">' + icon(h.ic) + '</div>' +
       '<div class="info"><div class="nm">' + h.name + '</div>' + (sub ? '<div class="sb">' + sub + '</div>' : "") + '</div>' + right + '</div>';
-    card.querySelector(".row").onclick = () => {
-      if (h.type === "steps" || h.type === "sleep") { editing = (editing === h.key) ? null : h.key; render(); }
+    card.querySelector(".row").onclick = (ev) => {
+      if (ev.target && ev.target.dataset && ev.target.dataset.det) { editing = (editing === h.key) ? null : h.key; render(); return; }
+      if (h.type === "steps" || h.type === "sleep" || h.type === "water") { editing = (editing === h.key) ? null : h.key; render(); }
       else toggle(selDay, h);
     };
     if (editing === h.key) {
       const ed = document.createElement("div");
       ed.className = "editor";
-      const v = val(PERSON, selDay, h.key);
-      const step = h.type === "sleep" ? "0.25" : "1";
-      ed.innerHTML = '<input id="numInp" type="number" inputmode="decimal" step="' + step + '" placeholder="' +
-        (h.type === "sleep" ? "e.g. 7.5" : "e.g. " + fmt(h.target)) + '"' + (v != null ? ' value="' + v + '"' : "") + '>' +
-        '<span class="unit">' + (h.type === "sleep" ? "hours" : "steps") + '</span>' +
-        '<button class="btn ghost" id="numCancel">Cancel</button><button class="btn save" id="numSave">Save</button>';
+      if (h.type === "water") {
+        const r0 = rec(PERSON, selDay, h.key);
+        const ticked = !!(r0 && r0.d && !(r0.v != null && r0.v >= h.target));
+        ed.className = "editor wrapd";
+        ed.innerHTML = '<button class="btn chipb" data-add="0.25">+250 ml</button>' +
+          '<button class="btn chipb" data-add="0.5">+500 ml</button>' +
+          '<button class="btn chipb" data-add="1">+1 L</button>' +
+          '<input id="numInp" type="number" inputmode="decimal" step="50" placeholder="ml">' +
+          '<button class="btn save" id="wAdd">Add</button>' +
+          '<button class="btn ghost" id="wTick">' + (ticked ? "Untick" : "Tick off") + '</button>' +
+          '<button class="btn ghost" id="numCancel">Close</button>';
+        card.appendChild(ed);
+        ed.querySelectorAll(".chipb").forEach(b => b.onclick = (e) => { e.stopPropagation(); addWater(selDay, h, parseFloat(b.dataset.add)); });
+        ed.querySelector("#wAdd").onclick = (e) => { e.stopPropagation();
+          const ml = parseFloat(document.getElementById("numInp").value);
+          if (!isNaN(ml) && ml > 0) addWater(selDay, h, ml / 1000); };
+        ed.querySelector("#wTick").onclick = (e) => { e.stopPropagation(); tickWater(selDay, h); };
+        ed.querySelector("#numCancel").onclick = (e) => { e.stopPropagation(); editing = null; render(); };
+        hEl.appendChild(card);
+        continue;
+      }
+      if (h.type === "wk") {
+        const det = detOf(PERSON, selDay, h.key) || {};
+        let inner = "";
+        if (h.det.includes("km")) inner += '<input id="numInp" type="number" inputmode="decimal" step="0.1" placeholder="km"' + (det.km != null ? ' value="' + det.km + '"' : "") + '>';
+        inner += '<input id="' + (h.det.includes("km") ? "numInp2" : "numInp") + '" type="number" inputmode="decimal" step="1" placeholder="minutes"' + (det.min != null ? ' value="' + det.min + '"' : "") + '>';
+        ed.innerHTML = inner + '<button class="btn ghost" id="numCancel">Cancel</button><button class="btn save" id="numSave">Save</button>';
+      } else {
+        const v = val(PERSON, selDay, h.key);
+        const step = h.type === "sleep" ? "0.25" : "1";
+        ed.innerHTML = '<input id="numInp" type="number" inputmode="decimal" step="' + step + '" placeholder="' +
+          (h.type === "sleep" ? "e.g. 7.5" : "e.g. " + fmt(h.target)) + '"' + (v != null ? ' value="' + v + '"' : "") + '>' +
+          '<span class="unit">' + (h.type === "sleep" ? "hours" : "steps") + '</span>' +
+          '<button class="btn ghost" id="numCancel">Cancel</button><button class="btn save" id="numSave">Save</button>';
+      }
       card.appendChild(ed);
       ed.querySelector("#numSave").onclick = (e) => { e.stopPropagation(); saveNum(selDay, h); };
       ed.querySelector("#numCancel").onclick = (e) => { e.stopPropagation(); editing = null; render(); };
