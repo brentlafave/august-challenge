@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>August Challenge</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="August">
+<meta name="theme-color" content="#0d0f12">
+<link rel="apple-touch-icon" href="https://ucjhatxzxkqfksptdsoj.supabase.co/storage/v1/object/public/apps/august/icon-180.png">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --card: #171a1f;
+    --card2: #1e2229;
+    --line: #2a2f38;
+    --text: #f2f4f7;
+    --dim: #8a93a2;
+    --accent: #34d399;
+    --accent-dim: #0e3b2c;
+    --amber: #fbbf24;
+    --radius: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px); min-height: 100vh; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 12px 16px 0; }
+
+  header { padding: 10px 0 2px; }
+  .title-row { display: flex; align-items: baseline; justify-content: space-between; }
+  h1 { font-size: 26px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  h1 span { color: var(--accent); }
+  .sync { font-size: 11px; color: var(--dim); }
+  .sync.err { color: var(--amber); }
+  .people { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .person-chip { padding: 6px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 13px; font-weight: 600; color: var(--dim); cursor: pointer; }
+  .person-chip.sel { background: var(--accent); border-color: var(--accent); color: #06281c; }
+  .other-pct { margin-left: auto; font-size: 11.5px; color: var(--dim); }
+  .month-bar { margin-top: 10px; height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+  .month-bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
+  .month-caption { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-top: 6px; }
+
+  .days { display: flex; gap: 8px; overflow-x: auto; padding: 14px 2px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .days::-webkit-scrollbar { display: none; }
+  .day { flex: 0 0 auto; width: 46px; padding: 8px 0 7px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); text-align: center; cursor: pointer; }
+  .day .dow { font-size: 10px; color: var(--dim); text-transform: uppercase; }
+  .day .num { font-size: 17px; font-weight: 700; margin: 1px 0 4px; }
+  .day .dots { height: 5px; display: flex; justify-content: center; gap: 2px; }
+  .day .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
+  .day .dots i.on { background: var(--accent); }
+  .day.sel { border-color: var(--accent); background: var(--accent-dim); }
+  .day.future { opacity: .38; }
+  .day.perfect { box-shadow: 0 0 0 1px var(--accent) inset; }
+
+  .selected-label { margin: 10px 0 8px; font-size: 13px; color: var(--dim); }
+  .selected-label b { color: var(--text); font-weight: 700; }
+
+  .habits { display: flex; flex-direction: column; gap: 9px; }
+  .habit { display: flex; align-items: center; gap: 13px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 15px; cursor: pointer; user-select: none; -webkit-user-select: none; transition: background .15s, border-color .15s; }
+  .habit.done { background: var(--accent-dim); border-color: rgba(52,211,153,.45); }
+  .habit .emoji { font-size: 22px; width: 30px; text-align: center; }
+  .habit .info { flex: 1; min-width: 0; }
+  .habit .name { font-size: 15px; font-weight: 600; }
+  .habit.done .name { color: var(--accent); }
+  .habit .sub { font-size: 11.5px; color: var(--dim); margin-top: 2px; }
+  .habit .check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 14px; color: transparent; flex: 0 0 auto; transition: all .15s; }
+  .habit.done .check { background: var(--accent); border-color: var(--accent); color: #06281c; }
+
+  .stats { margin-top: 22px; }
+  .stats h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 10px; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 12px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 10px; text-align: center; }
+  .tile .v { font-size: 22px; font-weight: 800; color: var(--accent); }
+  .tile .l { font-size: 10.5px; color: var(--dim); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+  .hstats { display: flex; flex-direction: column; gap: 7px; }
+  .hstat { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+  .hstat .he { width: 22px; text-align: center; }
+  .hstat .hn { width: 108px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hstat .hb { flex: 1; height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+  .hstat .hb i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+  .hstat .hv { width: 44px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+  footer { text-align: center; color: var(--dim); font-size: 11px; margin-top: 26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-row">
+      <h1>August <span>Challenge</span></h1>
+      <div class="sync" id="sync">…</div>
+    </div>
+    <div class="people" id="people"></div>
+    <div class="month-bar"><i id="monthFill"></i></div>
+    <div class="month-caption"><span id="monthPct">0%</span><span id="monthDays"></span></div>
+  </header>
+
+  <div class="days" id="days"></div>
+  <div class="selected-label" id="selLabel"></div>
+  <div class="habits" id="habits"></div>
+
+  <div class="stats">
+    <h2>Month so far</h2>
+    <div class="tiles">
+      <div class="tile"><div class="v" id="stPerfect">0</div><div class="l">Perfect days</div></div>
+      <div class="tile"><div class="v" id="stStreak">0</div><div class="l">Streak</div></div>
+      <div class="tile"><div class="v" id="stChecks">0</div><div class="l">Total checks</div></div>
+    </div>
+    <div class="hstats" id="hstats"></div>
+  </div>
+  <footer>Tap a habit to check it off. Syncs automatically.</footer>
+</div>
+
+<script>
+const SB_URL = "https://ucjhatxzxkqfksptdsoj.supabase.co";
+const SB_KEY = "sb_publishable_-b6cGqwPC4QS8OeKJa-1KA_MNr9u5xc";
+const TABLE = "august_challenge";
+const YEAR = 2026, MONTH = 7; // August (0-indexed)
+const NDAYS = 31;
+
+const HABITS = [
+  { key: "water",     emoji: "💧", name: "Water & non-sugar drinks only", type: "daily" },
+  { key: "noalcohol", emoji: "🚫", name: "No alcohol",                    type: "daily" },
+  { key: "noubereats",emoji: "🍔", name: "No Uber Eats",                  type: "daily" },
+  { key: "sleep",     emoji: "😴", name: "6–8 hrs sleep",                 type: "daily" },
+  { key: "steps",     emoji: "👟", name: "8k steps",                      type: "daily" },
+  { key: "weights",   emoji: "🏋️", name: "Weights",  type: "weekly", target: 2 },
+  { key: "run",       emoji: "🏃", name: "Run",      type: "weekly", target: 1 },
+  { key: "audiobook", emoji: "🎧", name: "Audio book",                    type: "daily" }
+];
+const DAILY_COUNT = HABITS.filter(h => h.type === "daily").length;
+
+const PEOPLE = [
+  { key: "brent", label: "Brent" },
+  { key: "mate",  label: "Mate" }
+];
+
+// state: { person: { "day|habit": true } }
+let state = { brent: {}, mate: {} };
+let pending = {}; // unsynced toggles: { "person|day|habit": bool }
+let selDay = null;
+let PERSON = "brent";
+
+const LS_STATE = "aug26b_state", LS_PENDING = "aug26b_pending", LS_PERSON = "aug26b_person";
+try { state = Object.assign({ brent: {}, mate: {} }, JSON.parse(localStorage.getItem(LS_STATE)) || {}); } catch(e) {}
+try { pending = JSON.parse(localStorage.getItem(LS_PENDING)) || {}; } catch(e) {}
+try { PERSON = localStorage.getItem(LS_PERSON) || "brent"; } catch(e) {}
+if (!state[PERSON]) PERSON = "brent";
+function cur() { return state[PERSON]; }
+
+function todayDay() {
+  const n = new Date();
+  if (n.getFullYear() === YEAR && n.getMonth() === MONTH) return n.getDate();
+  if (n < new Date(YEAR, MONTH, 1)) return 0;   // before August
+  return NDAYS + 1;                              // after August
+}
+function clampDay(d) { return Math.min(Math.max(d, 1), NDAYS); }
+function dow(d) { return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(YEAR, MONTH, d).getDay()]; }
+// challenge weeks: Aug 1 (Sat)… week = ISO-ish Mon-Sun blocks; simpler: week 1 = days 1-2 (Sat-Sun)? Use Mon-Sun calendar weeks.
+function weekOf(d) {
+  // Monday-based week index within August
+  const first = new Date(YEAR, MONTH, 1);
+  const offset = (first.getDay() + 6) % 7; // days since Monday at Aug 1
+  return Math.floor((d - 1 + offset) / 7);
+}
+function weekDays(w) {
+  const days = [];
+  for (let d = 1; d <= NDAYS; d++) if (weekOf(d) === w) days.push(d);
+  return days;
+}
+function k(day, habit) { return day + "|" + habit; }
+function isDoneFor(p, day, habit) { return !!(state[p] && state[p][k(day, habit)]); }
+function isDone(day, habit) { return isDoneFor(PERSON, day, habit); }
+function dayScore(d) { let c = 0; for (const h of HABITS) if (isDone(d, h.key)) c++; return c; }
+function dayPerfect(d) {
+  // perfect day = all daily habits done (weekly ones don't count against a day)
+  return HABITS.filter(h => h.type === "daily").every(h => isDone(d, h.key));
+}
+
+function save() {
+  try { localStorage.setItem(LS_STATE, JSON.stringify(state)); localStorage.setItem(LS_PENDING, JSON.stringify(pending)); localStorage.setItem(LS_PERSON, PERSON); } catch(e) {}
+}
+
+function setSync(msg, err) {
+  const el = document.getElementById("sync");
+  el.textContent = msg; el.className = "sync" + (err ? " err" : "");
+}
+
+async function pull() {
+  try {
+    const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?select=person,day,habit,done", {
+      headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }
+    });
+    if (!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    const server = { brent: {}, mate: {} };
+    for (const row of rows) if (row.done && server[row.person]) server[row.person][k(row.day, row.habit)] = true;
+    // merge: server state wins except keys with pending local changes
+    for (const key of Object.keys(pending)) {
+      const [p, day, habit] = key.split("|");
+      if (!server[p]) continue;
+      if (pending[key]) server[p][k(day, habit)] = true; else delete server[p][k(day, habit)];
+    }
+    state = server;
+    save(); render();
+    setSync("synced");
+    flush();
+  } catch (e) { setSync("offline — saved on phone", true); }
+}
+
+async function flush() {
+  const keys = Object.keys(pending);
+  if (!keys.length) return;
+  const rows = keys.map(key => {
+    const [person, day, habit] = key.split("|");
+    return { person, day: +day, habit, done: !!pending[key], updated_at: new Date().toISOString() };
+  });
+  try {
+    const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?on_conflict=person,day,habit", {
+      method: "POST",
+      headers: {
+        apikey: SB_KEY, Authorization: "Bearer " + SB_KEY,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      },
+      body: JSON.stringify(rows)
+    });
+    if (!r.ok) throw new Error(r.status);
+    pending = {}; save();
+    setSync("synced");
+  } catch (e) { setSync("offline — will sync later", true); }
+}
+
+function toggle(day, habit) {
+  const key = k(day, habit);
+  const now = !cur()[key];
+  if (now) cur()[key] = true; else delete cur()[key];
+  pending[PERSON + "|" + key] = now;
+  save(); render();
+  flush();
+}
+
+function monthPctFor(p) {
+  const t = todayDay();
+  const elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
+  let done = 0, poss = elapsed * DAILY_COUNT;
+  for (let d = 1; d <= elapsed; d++) for (const h of HABITS) if (h.type === "daily" && isDoneFor(p, d, h.key)) done++;
+  const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
+  for (const w of weeks) {
+    const days = weekDays(w);
+    if (t >= days[0]) for (const h of HABITS) if (h.type === "weekly") {
+      poss += h.target;
+      done += Math.min(h.target, days.filter(d => isDoneFor(p, d, h.key)).length);
+    }
+  }
+  return poss ? Math.round(done / poss * 100) : 0;
+}
+
+function render() {
+  const t = todayDay();
+
+  // person switcher
+  const pplEl = document.getElementById("people");
+  pplEl.innerHTML = "";
+  for (const p of PEOPLE) {
+    const el = document.createElement("div");
+    el.className = "person-chip" + (p.key === PERSON ? " sel" : "");
+    el.textContent = p.label;
+    el.onclick = () => { PERSON = p.key; save(); render(); };
+    pplEl.appendChild(el);
+  }
+  const other = PEOPLE.find(p => p.key !== PERSON);
+  const otherEl = document.createElement("div");
+  otherEl.className = "other-pct";
+  otherEl.textContent = other.label + ": " + monthPctFor(other.key) + "%";
+  pplEl.appendChild(otherEl);
+
+  // day strip
+  const daysEl = document.getElementById("days");
+  daysEl.innerHTML = "";
+  for (let d = 1; d <= NDAYS; d++) {
+    const el = document.createElement("div");
+    el.className = "day" + (d === selDay ? " sel" : "") + (t >= 1 && t <= NDAYS && d > t ? " future" : "") + (dayPerfect(d) ? " perfect" : "");
+    const sc = dayScore(d);
+    const dots = Math.min(3, Math.ceil(sc * 3 / HABITS.length));
+    el.innerHTML = '<div class="dow">' + dow(d) + '</div><div class="num">' + d + '</div>' +
+      '<div class="dots">' + [1,2,3].map(i => '<i class="' + (sc > 0 && i <= dots ? "on" : "") + '"></i>').join("") + '</div>';
+    el.onclick = () => { selDay = d; render(); };
+    daysEl.appendChild(el);
+  }
+
+  // selected label
+  const selEl = document.getElementById("selLabel");
+  const label = (selDay === t) ? "Today" : dow(selDay) + " " + selDay + " August";
+  selEl.innerHTML = "<b>" + label + "</b> — " + dayScore(selDay) + " of " + HABITS.length + " done";
+
+  // habits
+  const hEl = document.getElementById("habits");
+  hEl.innerHTML = "";
+  for (const h of HABITS) {
+    const done = isDone(selDay, h.key);
+    let sub = "";
+    if (h.type === "weekly") {
+      const w = weekOf(selDay);
+      const count = weekDays(w).filter(d => isDone(d, h.key)).length;
+      sub = count + " of " + h.target + " this week" + (count >= h.target ? " ✓" : "");
+    }
+    const el = document.createElement("div");
+    el.className = "habit" + (done ? " done" : "");
+    el.innerHTML = '<div class="emoji">' + h.emoji + '</div><div class="info"><div class="name">' + h.name + '</div>' +
+      (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div><div class="check">✓</div>';
+    el.onclick = () => toggle(selDay, h.key);
+    hEl.appendChild(el);
+  }
+
+  // month progress
+  const elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
+  let totalChecks = 0;
+  for (let d = 1; d <= NDAYS; d++) for (const h of HABITS) if (isDone(d, h.key)) totalChecks++;
+  const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
+  const pct = monthPctFor(PERSON);
+  document.getElementById("monthFill").style.width = pct + "%";
+  document.getElementById("monthPct").textContent = pct + "% of challenge so far";
+  document.getElementById("monthDays").textContent = elapsed < 1 ? "Starts Aug 1" : "Day " + elapsed + " of " + NDAYS;
+
+  // tiles
+  let perfect = 0; for (let d = 1; d <= elapsed; d++) if (dayPerfect(d)) perfect++;
+  let streak = 0; for (let d = Math.min(elapsed, NDAYS); d >= 1; d--) { if (dayPerfect(d)) streak++; else break; }
+  document.getElementById("stPerfect").textContent = perfect;
+  document.getElementById("stStreak").textContent = streak;
+  document.getElementById("stChecks").textContent = totalChecks;
+
+  // per-habit bars
+  const hs = document.getElementById("hstats");
+  hs.innerHTML = "";
+  for (const h of HABITS) {
+    let num = 0, den;
+    if (h.type === "daily") {
+      den = Math.max(elapsed, 1);
+      for (let d = 1; d <= elapsed; d++) if (isDone(d, h.key)) num++;
+    } else {
+      den = 0; num = 0;
+      for (const w of weeks) {
+        const days = weekDays(w);
+        if (t >= days[0]) { den += h.target; num += Math.min(h.target, days.filter(d => isDone(d, h.key)).length); }
+      }
+      den = Math.max(den, 1);
+    }
+    const p = Math.round(num / den * 100);
+    const el = document.createElement("div");
+    el.className = "hstat";
+    el.innerHTML = '<div class="he">' + h.emoji + '</div><div class="hn">' + h.name + '</div>' +
+      '<div class="hb"><i style="width:' + p + '%"></i></div><div class="hv">' + num + "/" + den + '</div>';
+    hs.appendChild(el);
+  }
+}
+
+selDay = clampDay(todayDay());
+render();
+pull();
+// keep fresh when reopened from home screen
+document.addEventListener("visibilitychange", () => { if (!document.hidden) pull(); });
+window.addEventListener("online", flush);
+// scroll selected day into view
+setTimeout(() => {
+  const sel = document.querySelector(".day.sel");
+  if (sel) sel.scrollIntoView({ inline: "center", block: "nearest" });
+}, 50);
+</script>
+</body>
+</html>
