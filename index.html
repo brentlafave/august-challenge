@@ -9,204 +9,325 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="August">
-<meta name="theme-color" content="#0d0f12">
+<meta name="theme-color" content="#0a0b0d">
 <link rel="apple-touch-icon" href="https://ucjhatxzxkqfksptdsoj.supabase.co/storage/v1/object/public/apps/august/icon-180.png">
 <style>
   :root {
-    --bg: #0d0f12;
-    --card: #171a1f;
-    --card2: #1e2229;
-    --line: #2a2f38;
-    --text: #f2f4f7;
-    --dim: #8a93a2;
-    --accent: #34d399;
-    --accent-dim: #0e3b2c;
-    --amber: #fbbf24;
-    --radius: 16px;
+    --bg: #0a0b0d; --surface: #12141a; --surface2: #191c23; --line: #232833;
+    --text: #f4f5f7; --muted: #828b99; --faint: #4a5160;
+    --accent: #35d69b; --accent-soft: rgba(53,214,155,.12); --accent-line: rgba(53,214,155,.4);
+    --warn: #e8a13c; --warn-soft: rgba(232,161,60,.14);
+    --r: 14px;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  body { padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 24px); min-height: 100vh; }
-  .wrap { max-width: 520px; margin: 0 auto; padding: 12px 16px 0; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    font-feature-settings:"tnum"; }
+  body { padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 32px); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:14px 16px 0; }
 
-  header { padding: 10px 0 2px; }
-  .title-row { display: flex; align-items: baseline; justify-content: space-between; }
-  h1 { font-size: 26px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
-  h1 span { color: var(--accent); }
-  .sync { font-size: 11px; color: var(--dim); }
-  .sync.err { color: var(--amber); }
-  .people { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
-  .person-chip { padding: 6px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 13px; font-weight: 600; color: var(--dim); cursor: pointer; }
-  .person-chip.sel { background: var(--accent); border-color: var(--accent); color: #06281c; }
-  .other-pct { margin-left: auto; font-size: 11.5px; color: var(--dim); }
-  .month-bar { margin-top: 10px; height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
-  .month-bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
-  .month-caption { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-top: 6px; }
+  header { padding:8px 0 0; }
+  .brand-row { display:flex; align-items:center; justify-content:space-between; }
+  .brand { font-size:11px; letter-spacing:2.5px; font-weight:700; color:var(--muted); text-transform:uppercase; }
+  .brand b { color:var(--accent); }
+  .sync { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+  .sync .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .sync.err .dot { background:var(--warn); }
+  h1 { font-size:24px; font-weight:800; letter-spacing:-.4px; margin-top:6px; }
 
-  .days { display: flex; gap: 8px; overflow-x: auto; padding: 14px 2px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .days::-webkit-scrollbar { display: none; }
-  .day { flex: 0 0 auto; width: 46px; padding: 8px 0 7px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); text-align: center; cursor: pointer; }
-  .day .dow { font-size: 10px; color: var(--dim); text-transform: uppercase; }
-  .day .num { font-size: 17px; font-weight: 700; margin: 1px 0 4px; }
-  .day .dots { height: 5px; display: flex; justify-content: center; gap: 2px; }
-  .day .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
-  .day .dots i.on { background: var(--accent); }
-  .day.sel { border-color: var(--accent); background: var(--accent-dim); }
-  .day.future { opacity: .38; }
-  .day.perfect { box-shadow: 0 0 0 1px var(--accent) inset; }
+  .seg-row { display:flex; align-items:center; gap:12px; margin-top:14px; }
+  .seg { display:flex; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:3px; flex:0 0 auto; }
+  .seg button { border:0; background:transparent; color:var(--muted); font:inherit; font-size:13.5px; font-weight:600;
+    padding:7px 18px; border-radius:9px; cursor:pointer; transition:all .18s; }
+  .seg button.on { background:var(--surface2); color:var(--text); box-shadow:0 1px 6px rgba(0,0,0,.4), inset 0 0 0 1px var(--line); }
+  .other { margin-left:auto; text-align:right; }
+  .other .op { font-size:15px; font-weight:700; color:var(--text); }
+  .other .ol { font-size:10.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.6px; }
 
-  .selected-label { margin: 10px 0 8px; font-size: 13px; color: var(--dim); }
-  .selected-label b { color: var(--text); font-weight: 700; }
+  .mbar { margin-top:14px; height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  .mbar i { display:block; height:100%; width:0; background:var(--accent); border-radius:3px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+  .mcap { display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin-top:6px; }
 
-  .habits { display: flex; flex-direction: column; gap: 9px; }
-  .habit { display: flex; align-items: center; gap: 13px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 15px; cursor: pointer; user-select: none; -webkit-user-select: none; transition: background .15s, border-color .15s; }
-  .habit.done { background: var(--accent-dim); border-color: rgba(52,211,153,.45); }
-  .habit .emoji { font-size: 22px; width: 30px; text-align: center; }
-  .habit .info { flex: 1; min-width: 0; }
-  .habit .name { font-size: 15px; font-weight: 600; }
-  .habit.done .name { color: var(--accent); }
-  .habit .sub { font-size: 11.5px; color: var(--dim); margin-top: 2px; }
-  .habit .check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 14px; color: transparent; flex: 0 0 auto; transition: all .15s; }
-  .habit.done .check { background: var(--accent); border-color: var(--accent); color: #06281c; }
+  .days { display:flex; gap:7px; overflow-x:auto; padding:16px 2px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .days::-webkit-scrollbar { display:none; }
+  .day { flex:0 0 auto; width:46px; padding:8px 0 8px; border-radius:12px; background:var(--surface); border:1px solid var(--line);
+    text-align:center; cursor:pointer; transition:border-color .15s, background .15s; }
+  .day:active { transform:scale(.96); }
+  .day .dw { font-size:9.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; }
+  .day .dn { font-size:16px; font-weight:700; margin:2px 0 5px; }
+  .day .ring { margin:0 auto; width:18px; height:4px; border-radius:2px; background:var(--surface2); overflow:hidden; }
+  .day .ring i { display:block; height:100%; background:var(--accent); }
+  .day.sel { border-color:var(--accent-line); background:var(--accent-soft); }
+  .day.today .dw { color:var(--accent); }
+  .day.future { opacity:.35; }
 
-  .stats { margin-top: 22px; }
-  .stats h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 10px; }
-  .tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 12px; }
-  .tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 10px; text-align: center; }
-  .tile .v { font-size: 22px; font-weight: 800; color: var(--accent); }
-  .tile .l { font-size: 10.5px; color: var(--dim); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
-  .hstats { display: flex; flex-direction: column; gap: 7px; }
-  .hstat { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
-  .hstat .he { width: 22px; text-align: center; }
-  .hstat .hn { width: 108px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hstat .hb { flex: 1; height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
-  .hstat .hb i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
-  .hstat .hv { width: 44px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
-  footer { text-align: center; color: var(--dim); font-size: 11px; margin-top: 26px; }
+  .sel-label { margin:12px 0 10px; display:flex; align-items:baseline; justify-content:space-between; }
+  .sel-label b { font-size:15px; font-weight:700; }
+  .sel-label span { font-size:12px; color:var(--muted); }
+
+  .habits { display:flex; flex-direction:column; gap:8px; }
+  .habit { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); transition:border-color .15s, background .15s; }
+  .habit .row { display:flex; align-items:center; gap:12px; padding:13px 14px; cursor:pointer; user-select:none; -webkit-user-select:none; }
+  .habit .row:active { opacity:.8; }
+  .habit.done { background:var(--accent-soft); border-color:var(--accent-line); }
+  .habit.miss { background:var(--warn-soft); border-color:rgba(232,161,60,.35); }
+  .ic { width:34px; height:34px; border-radius:10px; background:var(--surface2); display:flex; align-items:center; justify-content:center;
+    color:var(--muted); flex:0 0 auto; }
+  .habit.done .ic { color:var(--accent); background:rgba(53,214,155,.15); }
+  .habit.miss .ic { color:var(--warn); background:rgba(232,161,60,.15); }
+  .ic svg { width:17px; height:17px; }
+  .info { flex:1; min-width:0; }
+  .nm { font-size:14.5px; font-weight:600; letter-spacing:-.1px; }
+  .sb { font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .sb .carry { color:var(--warn); font-weight:600; }
+  .val { text-align:right; flex:0 0 auto; }
+  .val .v { font-size:16px; font-weight:700; letter-spacing:-.3px; }
+  .val .u { font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:.5px; margin-top:1px; }
+  .val .v.empty { color:var(--faint); font-weight:500; }
+  .chk { width:24px; height:24px; border-radius:50%; border:1.8px solid var(--line); flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; color:transparent; transition:all .15s; }
+  .habit.done .chk { background:var(--accent); border-color:var(--accent); color:#06281c; }
+  .chk svg { width:13px; height:13px; }
+  .pips { display:flex; gap:4px; flex:0 0 auto; }
+  .pip { width:8px; height:8px; border-radius:50%; background:var(--surface2); border:1px solid var(--line); }
+  .pip.on { background:var(--accent); border-color:var(--accent); }
+
+  .editor { border-top:1px solid var(--line); padding:12px 14px; display:flex; gap:8px; align-items:center; }
+  .editor input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:10px; color:var(--text);
+    font:inherit; font-size:16px; font-weight:600; padding:10px 12px; outline:none; min-width:0; }
+  .editor input:focus { border-color:var(--accent-line); }
+  .editor .unit { font-size:12px; color:var(--muted); flex:0 0 auto; }
+  .btn { border:0; font:inherit; font-size:13px; font-weight:700; padding:10px 16px; border-radius:10px; cursor:pointer; flex:0 0 auto; }
+  .btn.save { background:var(--accent); color:#06281c; }
+  .btn.ghost { background:var(--surface2); color:var(--muted); }
+
+  section { margin-top:26px; }
+  .sec-h { font-size:11px; text-transform:uppercase; letter-spacing:1.8px; color:var(--muted); font-weight:700; margin-bottom:12px; }
+
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .tile { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:12px 8px 11px; text-align:center; }
+  .tile .tv { font-size:19px; font-weight:800; letter-spacing:-.5px; }
+  .tile .tv small { font-size:11px; font-weight:600; color:var(--muted); }
+  .tile .tl { font-size:9.5px; color:var(--muted); margin-top:3px; text-transform:uppercase; letter-spacing:.5px; }
+
+  .chart-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 14px 10px; margin-bottom:10px; }
+  .chart-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .chart-top .ct { font-size:13px; font-weight:700; }
+  .chart-top .cm { font-size:11px; color:var(--muted); }
+  .chart { position:relative; height:84px; }
+  .bars { position:absolute; inset:0; display:flex; align-items:flex-end; gap:2px; }
+  .bars .bcol { flex:1; display:flex; align-items:flex-end; height:100%; }
+  .bars .b { width:100%; border-radius:2px 2px 0 0; background:var(--surface2); min-height:2px; }
+  .bars .b.pass { background:var(--accent); }
+  .bars .b.fail { background:var(--warn); }
+  .tline { position:absolute; left:0; right:0; border-top:1.5px dashed var(--faint); pointer-events:none; }
+  .tband { position:absolute; left:0; right:0; background:rgba(53,214,155,.07); border-top:1px dashed var(--accent-line); border-bottom:1px dashed var(--accent-line); pointer-events:none; }
+  .xaxis { display:flex; justify-content:space-between; font-size:9.5px; color:var(--faint); margin-top:6px; padding:0 1px; }
+
+  .grid-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px; overflow:hidden; }
+  .grow { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .grow:last-child { margin-bottom:0; }
+  .gname { width:92px; flex:0 0 auto; font-size:10.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gcells { flex:1; display:flex; gap:2px; }
+  .gc { flex:1; height:14px; border-radius:3px; background:var(--surface2); }
+  .gc.on { background:var(--accent); }
+  .gc.part { background:rgba(53,214,155,.35); }
+  .gc.off { background:var(--warn-soft); }
+  .gc.fut { background:var(--surface2); opacity:.4; }
+
+  .hstats { display:flex; flex-direction:column; gap:8px; }
+  .hstat { display:flex; align-items:center; gap:10px; font-size:12px; }
+  .hstat .hn { width:118px; flex:0 0 auto; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hstat .hb { flex:1; height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  .hstat .hb i { display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .3s; }
+  .hstat .hv { width:44px; flex:0 0 auto; text-align:right; color:var(--muted); }
+
+  footer { text-align:center; color:var(--faint); font-size:10.5px; margin-top:30px; letter-spacing:.3px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="title-row">
-      <h1>August <span>Challenge</span></h1>
-      <div class="sync" id="sync">…</div>
+    <div class="brand-row">
+      <div class="brand">August <b>Challenge</b></div>
+      <div class="sync" id="sync"><span class="dot"></span><span id="syncTxt">connecting</span></div>
     </div>
-    <div class="people" id="people"></div>
-    <div class="month-bar"><i id="monthFill"></i></div>
-    <div class="month-caption"><span id="monthPct">0%</span><span id="monthDays"></span></div>
   </header>
 
+  <div class="seg-row">
+    <div class="seg" id="seg"></div>
+    <div class="other" id="other"></div>
+  </div>
+  <div class="mbar"><i id="mFill"></i></div>
+  <div class="mcap"><span id="mPct"></span><span id="mDay"></span></div>
+
   <div class="days" id="days"></div>
-  <div class="selected-label" id="selLabel"></div>
+  <div class="sel-label"><b id="selT"></b><span id="selS"></span></div>
   <div class="habits" id="habits"></div>
 
-  <div class="stats">
-    <h2>Month so far</h2>
-    <div class="tiles">
-      <div class="tile"><div class="v" id="stPerfect">0</div><div class="l">Perfect days</div></div>
-      <div class="tile"><div class="v" id="stStreak">0</div><div class="l">Streak</div></div>
-      <div class="tile"><div class="v" id="stChecks">0</div><div class="l">Total checks</div></div>
-    </div>
+  <section>
+    <div class="sec-h">Month so far</div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section>
+    <div class="sec-h">Trends</div>
+    <div id="charts"></div>
+  </section>
+
+  <section>
+    <div class="sec-h">Consistency</div>
+    <div class="grid-card" id="grid"></div>
+  </section>
+
+  <section>
+    <div class="sec-h">Completion</div>
     <div class="hstats" id="hstats"></div>
-  </div>
-  <footer>Tap a habit to check it off. Syncs automatically.</footer>
+  </section>
+
+  <footer>Syncs automatically &middot; August 2026</footer>
 </div>
 
 <script>
 const SB_URL = "https://ucjhatxzxkqfksptdsoj.supabase.co";
 const SB_KEY = "sb_publishable_-b6cGqwPC4QS8OeKJa-1KA_MNr9u5xc";
 const TABLE = "august_challenge";
-const YEAR = 2026, MONTH = 7; // August (0-indexed)
-const NDAYS = 31;
+const YEAR = 2026, MONTH = 7, NDAYS = 31;
 
-const HABITS = [
-  { key: "water",     emoji: "💧", name: "Water & non-sugar drinks only", type: "daily" },
-  { key: "noalcohol", emoji: "🚫", name: "No alcohol",                    type: "daily" },
-  { key: "noubereats",emoji: "🍔", name: "No Uber Eats",                  type: "daily" },
-  { key: "sleep",     emoji: "😴", name: "6–8 hrs sleep",                 type: "daily" },
-  { key: "steps",     emoji: "👟", name: "8k steps",                      type: "daily" },
-  { key: "weights",   emoji: "🏋️", name: "Weights",  type: "weekly", target: 2 },
-  { key: "run",       emoji: "🏃", name: "Run",      type: "weekly", target: 1 },
-  { key: "audiobook", emoji: "🎧", name: "Audio book",                    type: "daily" }
-];
-const DAILY_COUNT = HABITS.filter(h => h.type === "daily").length;
+const ICONS = {
+  drop: '<path d="M12 2.7l5.66 5.66a8 8 0 1 1-11.31 0z"/>',
+  ban: '<circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>',
+  moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  steps: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  gym: '<line x1="6.5" y1="6.5" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="17.5" y2="17.5"/><line x1="3" y1="9.5" x2="3" y2="14.5"/><line x1="21" y1="9.5" x2="21" y2="14.5"/><line x1="6.5" y1="12" x2="17.5" y2="12"/>',
+  run: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
+  book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  bowl: '<path d="M4 11h16a8 8 0 0 1-16 0z" transform="translate(0 2)"/><line x1="9" y1="4" x2="9" y2="8"/><line x1="14" y1="3" x2="14" y2="7"/>',
+  phones: '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>'
+};
+function icon(name) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>'; }
 
 const PEOPLE = [
-  { key: "brent", label: "Brent" },
-  { key: "mate",  label: "Mate" }
+  { key:"brent", label:"Brent", habits:[
+    { key:"water",     name:"Water & non-sugar drinks", type:"bin", ic:"drop" },
+    { key:"noalcohol", name:"No alcohol",               type:"bin", ic:"ban" },
+    { key:"noubereats",name:"No Uber Eats",             type:"bin", ic:"ban" },
+    { key:"sleep",     name:"Sleep",  type:"sleep", lo:6, hi:8.5, sub:"Target 6–8 hrs", ic:"moon" },
+    { key:"steps",     name:"Steps",  type:"steps", target:8000, carry:true, ic:"steps" },
+    { key:"weights",   name:"Weights", type:"wk", target:2, sub:"2× per week", ic:"gym" },
+    { key:"run",       name:"Run",     type:"wk", target:1, sub:"1× per week", ic:"run" },
+    { key:"audiobook", name:"Audio book", type:"bin", sub:"Listen daily", ic:"phones" }
+  ]},
+  { key:"leighton", label:"Leighton", habits:[
+    { key:"water",   name:"Water only",   type:"bin", ic:"drop" },
+    { key:"noalcohol",name:"No alcohol",  type:"bin", ic:"ban" },
+    { key:"nojunk",  name:"No junk food", type:"bin", ic:"ban" },
+    { key:"sleep",   name:"Sleep",  type:"sleep", lo:6, hi:8.5, sub:"Target 6–8 hrs", ic:"moon" },
+    { key:"steps",   name:"Steps",  type:"steps", target:10000, carry:true, ic:"steps" },
+    { key:"gym",     name:"Gym",    type:"wk", target:3, sub:"3–4× per week", ic:"gym" },
+    { key:"run",     name:"Run",    type:"wk", target:3, sub:"3× per week", ic:"run" },
+    { key:"oats",    name:"Oat bowl", type:"bin", sub:"Every day", ic:"bowl" },
+    { key:"read",    name:"Read 10 pages", type:"bin", sub:"Every day", ic:"book" }
+  ]}
 ];
+function personDef(k) { return PEOPLE.find(p => p.key === k); }
 
-// state: { person: { "day|habit": true } }
-let state = { brent: {}, mate: {} };
-let pending = {}; // unsynced toggles: { "person|day|habit": bool }
-let selDay = null;
-let PERSON = "brent";
+// state[person]["day|habit"] = { d: 0/1, v: number|null }
+let state = {}; PEOPLE.forEach(p => state[p.key] = {});
+let pending = {};   // "person|day|habit" -> {d, v}
+let PERSON = "brent", selDay = null, editing = null;
 
-const LS_STATE = "aug26b_state", LS_PENDING = "aug26b_pending", LS_PERSON = "aug26b_person";
-try { state = Object.assign({ brent: {}, mate: {} }, JSON.parse(localStorage.getItem(LS_STATE)) || {}); } catch(e) {}
-try { pending = JSON.parse(localStorage.getItem(LS_PENDING)) || {}; } catch(e) {}
-try { PERSON = localStorage.getItem(LS_PERSON) || "brent"; } catch(e) {}
-if (!state[PERSON]) PERSON = "brent";
-function cur() { return state[PERSON]; }
+const LS = "aug26c_";
+try { const s = JSON.parse(localStorage.getItem(LS+"state")); if (s) PEOPLE.forEach(p => state[p.key] = s[p.key] || {}); } catch(e) {}
+try { pending = JSON.parse(localStorage.getItem(LS+"pending")) || {}; } catch(e) {}
+try { PERSON = localStorage.getItem(LS+"person") || "brent"; } catch(e) {}
+if (!personDef(PERSON)) PERSON = "brent";
+
+function save() { try {
+  localStorage.setItem(LS+"state", JSON.stringify(state));
+  localStorage.setItem(LS+"pending", JSON.stringify(pending));
+  localStorage.setItem(LS+"person", PERSON);
+} catch(e) {} }
 
 function todayDay() {
   const n = new Date();
   if (n.getFullYear() === YEAR && n.getMonth() === MONTH) return n.getDate();
-  if (n < new Date(YEAR, MONTH, 1)) return 0;   // before August
-  return NDAYS + 1;                              // after August
+  if (n < new Date(YEAR, MONTH, 1)) return 0;
+  return NDAYS + 1;
 }
 function clampDay(d) { return Math.min(Math.max(d, 1), NDAYS); }
 function dow(d) { return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(YEAR, MONTH, d).getDay()]; }
-// challenge weeks: Aug 1 (Sat)… week = ISO-ish Mon-Sun blocks; simpler: week 1 = days 1-2 (Sat-Sun)? Use Mon-Sun calendar weeks.
-function weekOf(d) {
-  // Monday-based week index within August
-  const first = new Date(YEAR, MONTH, 1);
-  const offset = (first.getDay() + 6) % 7; // days since Monday at Aug 1
-  return Math.floor((d - 1 + offset) / 7);
-}
-function weekDays(w) {
-  const days = [];
-  for (let d = 1; d <= NDAYS; d++) if (weekOf(d) === w) days.push(d);
-  return days;
-}
-function k(day, habit) { return day + "|" + habit; }
-function isDoneFor(p, day, habit) { return !!(state[p] && state[p][k(day, habit)]); }
-function isDone(day, habit) { return isDoneFor(PERSON, day, habit); }
-function dayScore(d) { let c = 0; for (const h of HABITS) if (isDone(d, h.key)) c++; return c; }
-function dayPerfect(d) {
-  // perfect day = all daily habits done (weekly ones don't count against a day)
-  return HABITS.filter(h => h.type === "daily").every(h => isDone(d, h.key));
-}
+function weekOf(d) { const off = (new Date(YEAR, MONTH, 1).getDay() + 6) % 7; return Math.floor((d - 1 + off) / 7); }
+function weekDays(w) { const a = []; for (let d = 1; d <= NDAYS; d++) if (weekOf(d) === w) a.push(d); return a; }
+function rec(p, d, h) { return state[p][d + "|" + h] || null; }
+function val(p, d, h) { const r = rec(p, d, h); return r && r.v != null ? +r.v : null; }
+function fmt(n) { return n.toLocaleString("en-AU"); }
 
-function save() {
-  try { localStorage.setItem(LS_STATE, JSON.stringify(state)); localStorage.setItem(LS_PENDING, JSON.stringify(pending)); localStorage.setItem(LS_PERSON, PERSON); } catch(e) {}
+// steps carry-over: yesterday's logged shortfall (capped at one base target) adds to today
+const effMemo = {};
+function stepsEff(p, d, hdef) {
+  const mk = p + d;
+  if (effMemo[mk] != null) return effMemo[mk];
+  let eff = hdef.target;
+  if (d > 1) {
+    const pv = val(p, d - 1, hdef.key);
+    if (pv != null) {
+      const prevEff = stepsEff(p, d - 1, hdef);
+      eff += Math.min(hdef.target, Math.max(0, prevEff - pv));
+    }
+  }
+  return effMemo[mk] = eff;
+}
+function habitDone(p, d, h) {
+  const r = rec(p, d, h.key);
+  if (h.type === "bin" || h.type === "wk") return !!(r && r.d);
+  if (h.type === "steps") { const v = val(p, d, h.key); return v != null && v >= stepsEff(p, d, h); }
+  if (h.type === "sleep") { const v = val(p, d, h.key); return v != null && v >= h.lo && v <= h.hi; }
+  return false;
+}
+function habitMissed(p, d, h, t) {
+  // logged / elapsed but not achieved (for numeric: only when a value exists)
+  if (d > Math.min(t, NDAYS) || t < 1) return false;
+  if (h.type === "steps" || h.type === "sleep") { const v = val(p, d, h.key); return v != null && !habitDone(p, d, h); }
+  return false;
+}
+function isDaily(h) { return h.type !== "wk"; }
+function dayScore(p, d) { const hs = personDef(p).habits; let c = 0; for (const h of hs) if (habitDone(p, d, h)) c++; return c; }
+function dayPerfect(p, d) { return personDef(p).habits.filter(isDaily).every(h => habitDone(p, d, h)); }
+
+function monthPct(p) {
+  const t = todayDay(), elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
+  const hs = personDef(p).habits;
+  let done = 0, poss = 0;
+  for (let d = 1; d <= elapsed; d++) for (const h of hs) if (isDaily(h)) { poss++; if (habitDone(p, d, h)) done++; }
+  const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
+  for (const w of weeks) { const days = weekDays(w);
+    if (t >= days[0]) for (const h of hs) if (h.type === "wk") {
+      poss += h.target;
+      done += Math.min(h.target, days.filter(d => habitDone(p, d, h)).length);
+    } }
+  return poss ? Math.round(done / poss * 100) : 0;
 }
 
 function setSync(msg, err) {
-  const el = document.getElementById("sync");
-  el.textContent = msg; el.className = "sync" + (err ? " err" : "");
+  document.getElementById("syncTxt").textContent = msg;
+  document.getElementById("sync").className = "sync" + (err ? " err" : "");
 }
 
 async function pull() {
   try {
-    const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?select=person,day,habit,done", {
-      headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY }
-    });
-    if (!r.ok) throw new Error(r.status);
+    const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?select=person,day,habit,done,value", {
+      headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY } });
+    if (!r.ok) throw 0;
     const rows = await r.json();
-    const server = { brent: {}, mate: {} };
-    for (const row of rows) if (row.done && server[row.person]) server[row.person][k(row.day, row.habit)] = true;
-    // merge: server state wins except keys with pending local changes
+    const s = {}; PEOPLE.forEach(p => s[p.key] = {});
+    for (const row of rows) if (s[row.person]) s[row.person][row.day + "|" + row.habit] = { d: row.done ? 1 : 0, v: row.value };
     for (const key of Object.keys(pending)) {
-      const [p, day, habit] = key.split("|");
-      if (!server[p]) continue;
-      if (pending[key]) server[p][k(day, habit)] = true; else delete server[p][k(day, habit)];
+      const [p, d, h] = key.split("|");
+      if (s[p]) s[p][d + "|" + h] = pending[key];
     }
-    state = server;
-    save(); render();
-    setSync("synced");
-    flush();
+    state = s; save(); render(); setSync("synced"); flush();
   } catch (e) { setSync("offline — saved on phone", true); }
 }
 
@@ -215,159 +336,233 @@ async function flush() {
   if (!keys.length) return;
   const rows = keys.map(key => {
     const [person, day, habit] = key.split("|");
-    return { person, day: +day, habit, done: !!pending[key], updated_at: new Date().toISOString() };
+    const r = pending[key];
+    return { person, day: +day, habit, done: !!r.d, value: r.v, updated_at: new Date().toISOString() };
   });
   try {
     const r = await fetch(SB_URL + "/rest/v1/" + TABLE + "?on_conflict=person,day,habit", {
       method: "POST",
-      headers: {
-        apikey: SB_KEY, Authorization: "Bearer " + SB_KEY,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal"
-      },
-      body: JSON.stringify(rows)
-    });
-    if (!r.ok) throw new Error(r.status);
-    pending = {}; save();
-    setSync("synced");
+      headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(rows) });
+    if (!r.ok) throw 0;
+    pending = {}; save(); setSync("synced");
   } catch (e) { setSync("offline — will sync later", true); }
 }
 
-function toggle(day, habit) {
-  const key = k(day, habit);
-  const now = !cur()[key];
-  if (now) cur()[key] = true; else delete cur()[key];
-  pending[PERSON + "|" + key] = now;
-  save(); render();
-  flush();
+function commit(d, h, obj) {
+  state[PERSON][d + "|" + h.key] = obj;
+  pending[PERSON + "|" + d + "|" + h.key] = obj;
+  for (const k of Object.keys(effMemo)) delete effMemo[k];
+  // recompute done flags for numeric records of this person (carry-over shifts targets)
+  save(); render(); flush();
 }
-
-function monthPctFor(p) {
-  const t = todayDay();
-  const elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
-  let done = 0, poss = elapsed * DAILY_COUNT;
-  for (let d = 1; d <= elapsed; d++) for (const h of HABITS) if (h.type === "daily" && isDoneFor(p, d, h.key)) done++;
-  const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
-  for (const w of weeks) {
-    const days = weekDays(w);
-    if (t >= days[0]) for (const h of HABITS) if (h.type === "weekly") {
-      poss += h.target;
-      done += Math.min(h.target, days.filter(d => isDoneFor(p, d, h.key)).length);
-    }
-  }
-  return poss ? Math.round(done / poss * 100) : 0;
+function toggle(d, h) {
+  const r = rec(PERSON, d, h.key);
+  commit(d, h, { d: r && r.d ? 0 : 1, v: r ? r.v : null });
+}
+function saveNum(d, h) {
+  const inp = document.getElementById("numInp");
+  const v = parseFloat(inp.value);
+  editing = null;
+  if (isNaN(v)) { render(); return; }
+  const obj = { d: 0, v: v };
+  state[PERSON][d + "|" + h.key] = obj;
+  for (const k of Object.keys(effMemo)) delete effMemo[k];
+  obj.d = habitDone(PERSON, d, h) ? 1 : 0;
+  commit(d, h, obj);
 }
 
 function render() {
+  for (const k of Object.keys(effMemo)) delete effMemo[k];
   const t = todayDay();
+  const P = personDef(PERSON);
 
-  // person switcher
-  const pplEl = document.getElementById("people");
-  pplEl.innerHTML = "";
+  // segmented control + other person
+  const seg = document.getElementById("seg"); seg.innerHTML = "";
   for (const p of PEOPLE) {
-    const el = document.createElement("div");
-    el.className = "person-chip" + (p.key === PERSON ? " sel" : "");
-    el.textContent = p.label;
-    el.onclick = () => { PERSON = p.key; save(); render(); };
-    pplEl.appendChild(el);
+    const b = document.createElement("button");
+    b.textContent = p.label; b.className = p.key === PERSON ? "on" : "";
+    b.onclick = () => { PERSON = p.key; editing = null; save(); render(); };
+    seg.appendChild(b);
   }
   const other = PEOPLE.find(p => p.key !== PERSON);
-  const otherEl = document.createElement("div");
-  otherEl.className = "other-pct";
-  otherEl.textContent = other.label + ": " + monthPctFor(other.key) + "%";
-  pplEl.appendChild(otherEl);
+  document.getElementById("other").innerHTML =
+    '<div class="op">' + monthPct(other.key) + '%</div><div class="ol">' + other.label + '</div>';
+
+  // month bar
+  const pct = monthPct(PERSON);
+  const elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
+  document.getElementById("mFill").style.width = pct + "%";
+  document.getElementById("mPct").textContent = pct + "% complete";
+  document.getElementById("mDay").textContent = elapsed < 1 ? "Starts 1 August" : "Day " + elapsed + " of " + NDAYS;
 
   // day strip
-  const daysEl = document.getElementById("days");
-  daysEl.innerHTML = "";
+  const daysEl = document.getElementById("days"); daysEl.innerHTML = "";
   for (let d = 1; d <= NDAYS; d++) {
     const el = document.createElement("div");
-    el.className = "day" + (d === selDay ? " sel" : "") + (t >= 1 && t <= NDAYS && d > t ? " future" : "") + (dayPerfect(d) ? " perfect" : "");
-    const sc = dayScore(d);
-    const dots = Math.min(3, Math.ceil(sc * 3 / HABITS.length));
-    el.innerHTML = '<div class="dow">' + dow(d) + '</div><div class="num">' + d + '</div>' +
-      '<div class="dots">' + [1,2,3].map(i => '<i class="' + (sc > 0 && i <= dots ? "on" : "") + '"></i>').join("") + '</div>';
-    el.onclick = () => { selDay = d; render(); };
+    el.className = "day" + (d === selDay ? " sel" : "") + (d === t ? " today" : "") + (t >= 1 && t <= NDAYS && d > t ? " future" : "");
+    const sc = dayScore(PERSON, d), tot = P.habits.length;
+    el.innerHTML = '<div class="dw">' + dow(d) + '</div><div class="dn">' + d + '</div>' +
+      '<div class="ring"><i style="width:' + Math.round(sc / tot * 100) + '%"></i></div>';
+    el.onclick = () => { selDay = d; editing = null; render(); };
     daysEl.appendChild(el);
   }
 
-  // selected label
-  const selEl = document.getElementById("selLabel");
-  const label = (selDay === t) ? "Today" : dow(selDay) + " " + selDay + " August";
-  selEl.innerHTML = "<b>" + label + "</b> — " + dayScore(selDay) + " of " + HABITS.length + " done";
+  // selected day
+  document.getElementById("selT").textContent = (selDay === t) ? "Today" : dow(selDay) + " " + selDay + " August";
+  document.getElementById("selS").textContent = dayScore(PERSON, selDay) + " of " + P.habits.length + " complete";
 
-  // habits
-  const hEl = document.getElementById("habits");
-  hEl.innerHTML = "";
-  for (const h of HABITS) {
-    const done = isDone(selDay, h.key);
-    let sub = "";
-    if (h.type === "weekly") {
-      const w = weekOf(selDay);
-      const count = weekDays(w).filter(d => isDone(d, h.key)).length;
-      sub = count + " of " + h.target + " this week" + (count >= h.target ? " ✓" : "");
+  // habit list
+  const hEl = document.getElementById("habits"); hEl.innerHTML = "";
+  for (const h of P.habits) {
+    const done = habitDone(PERSON, selDay, h);
+    const miss = habitMissed(PERSON, selDay, h, t);
+    const card = document.createElement("div");
+    card.className = "habit" + (done ? " done" : miss ? " miss" : "");
+    let sub = h.sub || "", right = "";
+    if (h.type === "steps") {
+      const eff = stepsEff(PERSON, selDay, h);
+      const carry = eff - h.target;
+      sub = "Target " + fmt(h.target) + (carry > 0 ? ' <span class="carry">+' + fmt(carry) + " carried</span>" : "");
+      const v = val(PERSON, selDay, h.key);
+      right = '<div class="val"><div class="v' + (v == null ? " empty" : "") + '">' + (v == null ? "—" : fmt(v)) + '</div><div class="u">steps</div></div>';
+    } else if (h.type === "sleep") {
+      const v = val(PERSON, selDay, h.key);
+      right = '<div class="val"><div class="v' + (v == null ? " empty" : "") + '">' + (v == null ? "—" : v) + '</div><div class="u">hours</div></div>';
+    } else if (h.type === "wk") {
+      const w = weekOf(selDay), count = weekDays(w).filter(d => habitDone(PERSON, d, h)).length;
+      sub = (h.sub || "") + " · " + count + "/" + h.target + " this week";
+      let pips = "";
+      for (let i = 0; i < h.target; i++) pips += '<span class="pip' + (i < count ? " on" : "") + '"></span>';
+      right = '<div class="pips">' + pips + '</div><div class="chk">' + (done ? icon("check") : "") + '</div>';
+    } else {
+      right = '<div class="chk">' + (done ? icon("check") : "") + '</div>';
     }
-    const el = document.createElement("div");
-    el.className = "habit" + (done ? " done" : "");
-    el.innerHTML = '<div class="emoji">' + h.emoji + '</div><div class="info"><div class="name">' + h.name + '</div>' +
-      (sub ? '<div class="sub">' + sub + '</div>' : "") + '</div><div class="check">✓</div>';
-    el.onclick = () => toggle(selDay, h.key);
-    hEl.appendChild(el);
+    card.innerHTML = '<div class="row"><div class="ic">' + icon(h.ic) + '</div>' +
+      '<div class="info"><div class="nm">' + h.name + '</div>' + (sub ? '<div class="sb">' + sub + '</div>' : "") + '</div>' + right + '</div>';
+    card.querySelector(".row").onclick = () => {
+      if (h.type === "steps" || h.type === "sleep") { editing = (editing === h.key) ? null : h.key; render(); }
+      else toggle(selDay, h);
+    };
+    if (editing === h.key) {
+      const ed = document.createElement("div");
+      ed.className = "editor";
+      const v = val(PERSON, selDay, h.key);
+      const step = h.type === "sleep" ? "0.25" : "1";
+      ed.innerHTML = '<input id="numInp" type="number" inputmode="decimal" step="' + step + '" placeholder="' +
+        (h.type === "sleep" ? "e.g. 7.5" : "e.g. " + fmt(h.target)) + '"' + (v != null ? ' value="' + v + '"' : "") + '>' +
+        '<span class="unit">' + (h.type === "sleep" ? "hours" : "steps") + '</span>' +
+        '<button class="btn ghost" id="numCancel">Cancel</button><button class="btn save" id="numSave">Save</button>';
+      card.appendChild(ed);
+      ed.querySelector("#numSave").onclick = (e) => { e.stopPropagation(); saveNum(selDay, h); };
+      ed.querySelector("#numCancel").onclick = (e) => { e.stopPropagation(); editing = null; render(); };
+    }
+    hEl.appendChild(card);
   }
-
-  // month progress
-  const elapsed = t < 1 ? 0 : Math.min(t, NDAYS);
-  let totalChecks = 0;
-  for (let d = 1; d <= NDAYS; d++) for (const h of HABITS) if (isDone(d, h.key)) totalChecks++;
-  const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
-  const pct = monthPctFor(PERSON);
-  document.getElementById("monthFill").style.width = pct + "%";
-  document.getElementById("monthPct").textContent = pct + "% of challenge so far";
-  document.getElementById("monthDays").textContent = elapsed < 1 ? "Starts Aug 1" : "Day " + elapsed + " of " + NDAYS;
+  const inp = document.getElementById("numInp");
+  if (inp) setTimeout(() => inp.focus(), 60);
 
   // tiles
-  let perfect = 0; for (let d = 1; d <= elapsed; d++) if (dayPerfect(d)) perfect++;
-  let streak = 0; for (let d = Math.min(elapsed, NDAYS); d >= 1; d--) { if (dayPerfect(d)) streak++; else break; }
-  document.getElementById("stPerfect").textContent = perfect;
-  document.getElementById("stStreak").textContent = streak;
-  document.getElementById("stChecks").textContent = totalChecks;
+  let perfect = 0, streak = 0, totalSteps = 0, sleepSum = 0, sleepN = 0;
+  for (let d = 1; d <= elapsed; d++) if (dayPerfect(PERSON, d)) perfect++;
+  for (let d = elapsed; d >= 1; d--) { if (dayPerfect(PERSON, d)) streak++; else break; }
+  for (let d = 1; d <= NDAYS; d++) {
+    const sv = val(PERSON, d, "steps"); if (sv != null) totalSteps += sv;
+    const sl = val(PERSON, d, "sleep"); if (sl != null) { sleepSum += sl; sleepN++; }
+  }
+  document.getElementById("tiles").innerHTML =
+    '<div class="tile"><div class="tv">' + perfect + '</div><div class="tl">Perfect days</div></div>' +
+    '<div class="tile"><div class="tv">' + streak + '</div><div class="tl">Streak</div></div>' +
+    '<div class="tile"><div class="tv">' + (totalSteps >= 10000 ? (totalSteps/1000).toFixed(1) + '<small>k</small>' : fmt(totalSteps)) + '</div><div class="tl">Total steps</div></div>' +
+    '<div class="tile"><div class="tv">' + (sleepN ? (sleepSum/sleepN).toFixed(1) + '<small>h</small>' : "—") + '</div><div class="tl">Avg sleep</div></div>';
 
-  // per-habit bars
-  const hs = document.getElementById("hstats");
-  hs.innerHTML = "";
-  for (const h of HABITS) {
-    let num = 0, den;
-    if (h.type === "daily") {
-      den = Math.max(elapsed, 1);
-      for (let d = 1; d <= elapsed; d++) if (isDone(d, h.key)) num++;
-    } else {
-      den = 0; num = 0;
-      for (const w of weeks) {
-        const days = weekDays(w);
-        if (t >= days[0]) { den += h.target; num += Math.min(h.target, days.filter(d => isDone(d, h.key)).length); }
-      }
-      den = Math.max(den, 1);
+  // trend charts
+  const charts = document.getElementById("charts"); charts.innerHTML = "";
+  const stepsDef = P.habits.find(h => h.type === "steps");
+  const sleepDef = P.habits.find(h => h.type === "sleep");
+  if (stepsDef) charts.appendChild(barChart("Steps", PERSON, stepsDef, t));
+  if (sleepDef) charts.appendChild(sleepChart("Sleep", PERSON, sleepDef, t));
+
+  // consistency grid
+  const grid = document.getElementById("grid"); grid.innerHTML = "";
+  for (const h of P.habits) {
+    const row = document.createElement("div"); row.className = "grow";
+    let cells = "";
+    for (let d = 1; d <= NDAYS; d++) {
+      let cls = "gc";
+      if (t >= 1 && t <= NDAYS && d > t) cls += " fut";
+      else if (habitDone(PERSON, d, h)) cls += " on";
+      else if (habitMissed(PERSON, d, h, t)) cls += " off";
+      row.innerHTML = "";
+      cells += '<span class="' + cls + '" title="' + h.name + ' · Aug ' + d + '"></span>';
     }
+    row.innerHTML = '<div class="gname">' + h.name + '</div><div class="gcells">' + cells + '</div>';
+    grid.appendChild(row);
+  }
+
+  // completion bars
+  const hs = document.getElementById("hstats"); hs.innerHTML = "";
+  const weeks = new Set(); for (let d = 1; d <= NDAYS; d++) weeks.add(weekOf(d));
+  for (const h of P.habits) {
+    let num = 0, den;
+    if (isDaily(h)) { den = Math.max(elapsed, 1); for (let d = 1; d <= elapsed; d++) if (habitDone(PERSON, d, h)) num++; }
+    else { den = 0;
+      for (const w of weeks) { const days = weekDays(w);
+        if (t >= days[0]) { den += h.target; num += Math.min(h.target, days.filter(d => habitDone(PERSON, d, h)).length); } }
+      den = Math.max(den, 1); }
     const p = Math.round(num / den * 100);
-    const el = document.createElement("div");
-    el.className = "hstat";
-    el.innerHTML = '<div class="he">' + h.emoji + '</div><div class="hn">' + h.name + '</div>' +
-      '<div class="hb"><i style="width:' + p + '%"></i></div><div class="hv">' + num + "/" + den + '</div>';
+    const el = document.createElement("div"); el.className = "hstat";
+    el.innerHTML = '<div class="hn">' + h.name + '</div><div class="hb"><i style="width:' + p + '%"></i></div><div class="hv">' + num + "/" + den + '</div>';
     hs.appendChild(el);
   }
+}
+
+function barChart(title, p, h, t) {
+  const card = document.createElement("div"); card.className = "chart-card";
+  let max = h.target * 1.35, logged = 0, sum = 0;
+  for (let d = 1; d <= NDAYS; d++) { const v = val(p, d, h.key); if (v != null) { max = Math.max(max, v * 1.05); logged++; sum += v; } }
+  let bars = "";
+  for (let d = 1; d <= NDAYS; d++) {
+    const v = val(p, d, h.key);
+    let cls = "b", hpx = 2;
+    if (v != null) { hpx = Math.max(3, Math.round(v / max * 84)); cls += v >= stepsEff(p, d, h) ? " pass" : " fail"; }
+    bars += '<div class="bcol"><div class="' + cls + '" style="height:' + hpx + 'px" title="Aug ' + d + ': ' + (v == null ? "—" : fmt(v)) + '"></div></div>';
+  }
+  const ty = Math.round(h.target / max * 84);
+  card.innerHTML = '<div class="chart-top"><span class="ct">' + title + '</span><span class="cm">' +
+    (logged ? "avg " + fmt(Math.round(sum / logged)) + " · " : "") + "target " + fmt(h.target) + '</span></div>' +
+    '<div class="chart"><div class="tline" style="bottom:' + ty + 'px"></div><div class="bars">' + bars + '</div></div>' +
+    '<div class="xaxis"><span>1</span><span>8</span><span>15</span><span>22</span><span>31</span></div>';
+  return card;
+}
+function sleepChart(title, p, h, t) {
+  const card = document.createElement("div"); card.className = "chart-card";
+  const max = 11;
+  let logged = 0, sum = 0, bars = "";
+  for (let d = 1; d <= NDAYS; d++) {
+    const v = val(p, d, h.key);
+    let cls = "b", hpx = 2;
+    if (v != null) { logged++; sum += v; hpx = Math.max(3, Math.round(Math.min(v, max) / max * 84)); cls += (v >= h.lo && v <= h.hi) ? " pass" : " fail"; }
+    bars += '<div class="bcol"><div class="' + cls + '" style="height:' + hpx + 'px" title="Aug ' + d + ': ' + (v == null ? "—" : v + " h") + '"></div></div>';
+  }
+  const y1 = Math.round(h.lo / max * 84), y2 = Math.round(Math.min(h.hi, 8) / max * 84);
+  card.innerHTML = '<div class="chart-top"><span class="ct">' + title + '</span><span class="cm">' +
+    (logged ? "avg " + (sum / logged).toFixed(1) + " h · " : "") + 'target 6–8 h</span></div>' +
+    '<div class="chart"><div class="tband" style="bottom:' + y1 + 'px; height:' + (y2 - y1) + 'px"></div><div class="bars">' + bars + '</div></div>' +
+    '<div class="xaxis"><span>1</span><span>8</span><span>15</span><span>22</span><span>31</span></div>';
+  return card;
 }
 
 selDay = clampDay(todayDay());
 render();
 pull();
-// keep fresh when reopened from home screen
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pull(); });
 window.addEventListener("online", flush);
-// scroll selected day into view
 setTimeout(() => {
   const sel = document.querySelector(".day.sel");
   if (sel) sel.scrollIntoView({ inline: "center", block: "nearest" });
-}, 50);
+}, 60);
 </script>
 </body>
 </html>
