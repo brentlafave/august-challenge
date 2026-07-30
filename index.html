@@ -312,6 +312,7 @@ const PEOPLE = [
     { key:"steps",   name:"Steps",  type:"steps", target:10000, carry:true, ic:"steps" },
     { key:"gym",     name:"Gym",    type:"wk", target:3, sub:"3–4× per week", ic:"gym", det:["min"] },
     { key:"run",     name:"Run",    type:"wk", target:3, sub:"3× per week", ic:"run", det:["km","min"] },
+    { key:"protein", name:"Protein", type:"num", target:180, unit:"g", sub:"180 g per day", ic:"bowl" },
     { key:"oats",    name:"Oat bowl", type:"bin", sub:"Every day", ic:"bowl" },
     { key:"read",    name:"Read 10 pages", type:"bin", sub:"Every day", ic:"book" }
   ]}
@@ -376,13 +377,14 @@ function habitDone(p, d, h) {
   if (h.type === "bin" || h.type === "wk") return !!(r && r.d);
   if (h.type === "steps") { const v = val(p, d, h.key); return v != null && v >= stepsEff(p, d, h); }
   if (h.type === "sleep") { const v = val(p, d, h.key); return v != null && v >= h.lo && v <= h.hi; }
+  if (h.type === "num") { const v = val(p, d, h.key); return v != null && v >= h.target; }
   if (h.type === "water") { const v = val(p, d, h.key); return !!(r && r.d) || (v != null && v >= h.target); }
   return false;
 }
 function habitMissed(p, d, h, t) {
   // logged / elapsed but not achieved (for numeric: only when a value exists)
   if (d > Math.min(t, NDAYS) || t < 1) return false;
-  if (h.type === "steps" || h.type === "sleep" || h.type === "water") { const v = val(p, d, h.key); return v != null && !habitDone(p, d, h); }
+  if (h.type === "steps" || h.type === "sleep" || h.type === "water" || h.type === "num") { const v = val(p, d, h.key); return v != null && !habitDone(p, d, h); }
   return false;
 }
 function isDaily(h) { return h.type !== "wk"; }
@@ -483,7 +485,7 @@ function missingPrev(p) {
   const d = Math.min(t, NDAYS + 1) - 1;
   if (d < 1 || d > NDAYS) return null;
   const missing = personDef(p).habits.filter(h => {
-    if (h.type === "steps" || h.type === "sleep") return val(p, d, h.key) == null;
+    if (h.type === "steps" || h.type === "sleep" || h.type === "num") return val(p, d, h.key) == null;
     if (h.type === "water") { const r = rec(p, d, h.key); return val(p, d, h.key) == null && !(r && r.d); }
     return false;
   });
@@ -578,6 +580,9 @@ function render() {
     } else if (h.type === "sleep") {
       const v = val(PERSON, selDay, h.key);
       right = '<div class="val"><div class="v' + (v == null ? " empty" : "") + '">' + (v == null ? "—" : v) + '</div><div class="u">hours</div></div>';
+    } else if (h.type === "num") {
+      const v = val(PERSON, selDay, h.key);
+      right = '<div class="val"><div class="v' + (v == null ? " empty" : "") + '">' + (v == null ? "—" : v) + '</div><div class="u">of ' + h.target + ' ' + h.unit + '</div></div>';
     } else if (h.type === "water") {
       const v = val(PERSON, selDay, h.key);
       const r0 = rec(PERSON, selDay, h.key);
@@ -599,7 +604,7 @@ function render() {
       '<div class="info"><div class="nm">' + h.name + '</div>' + (sub ? '<div class="sb">' + sub + '</div>' : "") + '</div>' + right + '</div>';
     card.querySelector(".row").onclick = (ev) => {
       if (ev.target && ev.target.dataset && ev.target.dataset.det) { editing = (editing === h.key) ? null : h.key; render(); return; }
-      if (h.type === "steps" || h.type === "sleep" || h.type === "water") { editing = (editing === h.key) ? null : h.key; render(); }
+      if (h.type === "steps" || h.type === "sleep" || h.type === "water" || h.type === "num") { editing = (editing === h.key) ? null : h.key; render(); }
       else toggle(selDay, h);
     };
     if (editing === h.key) {
@@ -637,7 +642,7 @@ function render() {
         const step = h.type === "sleep" ? "0.25" : "1";
         ed.innerHTML = '<input id="numInp" type="number" inputmode="decimal" step="' + step + '" placeholder="' +
           (h.type === "sleep" ? "e.g. 7.5" : "e.g. " + fmt(h.target)) + '"' + (v != null ? ' value="' + v + '"' : "") + '>' +
-          '<span class="unit">' + (h.type === "sleep" ? "hours" : "steps") + '</span>' +
+          '<span class="unit">' + (h.type === "sleep" ? "hours" : h.type === "num" ? (h.unit || "") : "steps") + '</span>' +
           '<button class="btn ghost" id="numCancel">Cancel</button><button class="btn save" id="numSave">Save</button>';
       }
       card.appendChild(ed);
